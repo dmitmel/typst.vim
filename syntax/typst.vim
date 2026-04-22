@@ -184,9 +184,9 @@ syntax cluster typstHashtagAfterIdentifier
 syntax match typstHashtagIdentifier /\v#\K%(\k|-)*>/ nextgroup=@typstHashtagAfterIdentifier
 syntax cluster typstHashtag add=typstHashtagIdentifier
 
-syntax match typstHashtagFieldAccess contained /\v\.\K%(\k|-)*>/ nextgroup=@typstHashtagAfterIdentifier
+syntax match typstHashtagFieldAccess contained /\v\.\K%(\k|-)*>/hs=s+1 nextgroup=@typstHashtagAfterIdentifier
 " Must come after typstHashtagFieldAccess
-syntax match typstHashtagMethodCall contained /\v\.\K%(\k|-)*>[\(\[]@=/ nextgroup=typstHashtagFunctionArguments
+syntax match typstHashtagMethodCall contained /\v\.\K%(\k|-)*>[\(\[]@=/hs=s+1 nextgroup=typstHashtagFunctionArguments
 
 " Must come after typstHashtagIdentifier
 syntax match typstHashtagFunction /\v#\K%(\k|-)*>[\(\[]@=/ nextgroup=typstHashtagFunctionArguments
