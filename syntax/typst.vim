@@ -48,29 +48,35 @@ syntax cluster typstCode
             \ ,@typstCodeParens
 
 " Code > Identifiers & Functions {{{2
-syntax cluster typstCodeAfterIdentifier contains=typstCodeFieldAccess,typstCodeMethodCall
-
-syntax match typstCodeIdentifier contained /\v<\K%(\k|-)*>/ nextgroup=@typstCodeAfterIdentifier skipwhite skipempty
+syntax match typstCodeIdentifier
+    \ contained
+    \ /\v<\K%(\k|-)*>/
+    \ skipwhite skipempty nextgroup=typstCodeIdentifierDot
 syntax cluster typstCode add=typstCodeIdentifier
+
 " " Must come after typstCodeIdentifier
-syntax match typstCodeFunction contained /\v<\K%(\k|-)*>[\(\[]@=/ nextgroup=typstCodeFunctionArguments skipwhite skipempty
+syntax match typstCodeFunction
+    \ contained
+    \ /\v<\K%(\k|-)*>[\(\[]@=/
+    \ skipwhite skipempty nextgroup=typstCodeFunctionArguments
 syntax cluster typstCode add=typstCodeFunction
 
-syntax match typstCodeFieldAccess contained /\v\.\s*\K%(\k|-)*>/hs=s+1 nextgroup=@typstCodeAfterIdentifier skipwhite skipempty
-" Must come after typstCodeFieldAccess. Note that you can't have a newline after the dot.
-syntax match typstCodeMethodCall contained /\v\.\s*\K%(\k|-)*>[\(\[]@=/hs=s+1 nextgroup=typstCodeFunctionArguments skipwhite skipempty
+syntax match typstCodeIdentifierDot
+    \ contained
+    \ /\./
+    \ skipwhite skipempty nextgroup=typstCodeIdentifier,typstCodeFunction
 
 syntax region typstCodeFunctionArguments
     \ contained
     \ matchgroup=Noise start=/(/ end=/)/
     \ contains=@typstCode
-    \ nextgroup=@typstCodeAfterIdentifier
+    \ skipwhite skipempty nextgroup=typstCodeIdentifierDot
 
 syntax region typstCodeFunctionArguments
     \ contained
     \ matchgroup=Noise start=/\[/ end=/\]/
     \ contains=@typstMarkup
-    \ nextgroup=@typstCodeAfterIdentifier
+    \ skipwhite skipempty nextgroup=typstCodeIdentifierDot
 
 
 " Code > Keywords {{{2
@@ -178,15 +184,15 @@ syntax match typstHashtagConstant
 
 " Hashtag > Identifiers & Functions {{{2
 
-syntax cluster typstHashtagAfterIdentifier contains=typstHashtagFieldAccess,typstHashtagMethodCall
+syntax cluster typstHashtagMemberAccess contains=typstHashtagFieldAccess,typstHashtagMethodCall
 
-syntax match typstHashtagIdentifier /\v#\K%(\k|-)*>/ nextgroup=@typstHashtagAfterIdentifier
+syntax match typstHashtagIdentifier /\v#\K%(\k|-)*>/ nextgroup=@typstHashtagMemberAccess
 syntax cluster typstHashtag add=typstHashtagIdentifier
 " Must come after typstHashtagIdentifier
 syntax match typstHashtagFunction /\v#\K%(\k|-)*>[\(\[]@=/ nextgroup=typstHashtagFunctionArguments
 syntax cluster typstHashtag add=typstHashtagFunction
 
-syntax match typstHashtagFieldAccess contained /\v\.\K%(\k|-)*>/hs=s+1 nextgroup=@typstHashtagAfterIdentifier
+syntax match typstHashtagFieldAccess contained /\v\.\K%(\k|-)*>/hs=s+1 nextgroup=@typstHashtagMemberAccess
 " Must come after typstHashtagFieldAccess
 syntax match typstHashtagMethodCall contained /\v\.\K%(\k|-)*>[\(\[]@=/hs=s+1 nextgroup=typstHashtagFunctionArguments
 
@@ -194,13 +200,13 @@ syntax region typstHashtagFunctionArguments
     \ contained
     \ matchgroup=Noise start=/(/ end=/)/
     \ contains=@typstCode
-    \ nextgroup=@typstHashtagAfterIdentifier
+    \ nextgroup=@typstHashtagMemberAccess
 
 syntax region typstHashtagFunctionArguments
     \ contained
     \ matchgroup=Noise start=/\[/ end=/\]/
     \ contains=@typstMarkup
-    \ nextgroup=@typstHashtagAfterIdentifier
+    \ nextgroup=@typstHashtagMemberAccess
 
 
 if g:typst_conceal_emoji
@@ -214,15 +220,22 @@ syntax cluster typstHashtagParens
             \ ,typstHashtagBrace
             \ ,typstHashtagBracket
             \ ,typstHashtagDollar
+
 syntax region typstHashtagParen
     \ matchgroup=Noise start=/#(/ end=/)/
     \ contains=@typstCode
+    \ nextgroup=@typstHashtagMemberAccess
+
 syntax region typstHashtagBrace
     \ matchgroup=Noise start=/#{/ end=/}/
     \ contains=@typstCode
+    \ nextgroup=@typstHashtagMemberAccess
+
 syntax region typstHashtagBracket
     \ matchgroup=Noise start=/#\[/ end=/\]/
     \ contains=@typstMarkup
+    \ nextgroup=@typstHashtagMemberAccess
+
 syntax region typstHashtagDollar
     \ matchgroup=Noise start=/#\$/ end=/\\\@<!\$/
     \ contains=@typstMath
@@ -314,7 +327,7 @@ syntax match typstMarkupUrl
 " Heading
 syntax match typstMarkupHeading
     \ /^\s*\zs=\{1,6}\s.*$/
-    \ contains=typstMarkupLabel,@Spell
+    \ contains=@typstMarkup,@Spell
 
 " Lists
 syntax match typstMarkupBulletList
@@ -340,12 +353,12 @@ TypstConcealends syntax region typstMarkupBoldRegion
     \ contained
     \ transparent matchgroup=typstMarkupBold
     \ start=/\(^\|[^0-9a-zA-Z]\)\@<=\*/ end=/\*\($\|[^0-9a-zA-Z]\)\@=/
-    \ contains=typstMarkupBoldItalic,typstMarkupLabel,@Spell
+    \ contains=typstMarkupBoldItalic,@typstMarkup,@Spell
 TypstConcealends syntax region typstMarkupItalicRegion
     \ contained
     \ transparent matchgroup=typstMarkupItalic
     \ start=/\(^\|[^0-9a-zA-Z]\)\@<=_/ end=/_\($\|[^0-9a-zA-Z]\)\@=/
-    \ contains=typstMarkupBoldItalic,typstMarkupLabel,@Spell
+    \ contains=typstMarkupBoldItalic,@typstMarkup,@Spell
 
 " Linebreak & Special Whitespace
 syntax match typstMarkupLinebreak
@@ -436,6 +449,7 @@ highlight default link typstCodeStatementWord       Statement
 highlight default link typstCodeIdentifier          Identifier
 highlight default link typstCodeFieldAccess         Identifier
 highlight default link typstCodeMethodCall          Function
+highlight default link typstCodeIdentifierDot       Noise
 highlight default link typstCodeFunction            Function
 highlight default link typstCodeParen               Noise
 highlight default link typstCodeBrace               Noise
