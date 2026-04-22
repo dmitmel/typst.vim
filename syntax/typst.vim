@@ -133,7 +133,7 @@ syntax match typstCodeFloatFraction contained /fr\>/
 syntax region typstCodeString
     \ contained
     \ start=/"/ skip=/\v\\\\|\\"/ end=/"/
-    \ contains=@Spell
+    \ contains=typstEscaped,@Spell
 syntax match typstCodeLabel
     \ contained
     \ /\v\<%(\k|:|\.|-)*\>/
@@ -403,6 +403,10 @@ if g:typst_conceal_math
     runtime! syntax/typst-symbols.vim
 endif
 
+" Must come absolutely last, so that it takes priority over any other pattern!
+syntax match typstEscaped /\\\%(u{\x*}\|.\)/
+syntax cluster typstMarkup add=typstEscaped
+
 
 " Math > Linked groups {{{2
 highlight default link typstMathIdentifier          Identifier
@@ -467,6 +471,8 @@ highlight default link typstMarkupDash              Structure
 highlight default link typstMarkupEllipsis          Structure
 highlight default link typstMarkupTermMarker        Structure
 highlight default link typstMarkupDollar            Noise
+
+highlight default link typstEscaped Special
 
 " Highlighting > Custom Styling {{{2
 highlight! Conceal ctermfg=NONE ctermbg=NONE guifg=NONE guibg=NONE
