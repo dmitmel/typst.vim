@@ -96,8 +96,8 @@ syntax region typstCodeStatement
     \ contains=@typstCode
 syntax region typstCodeStatement
     \ contained
-    \ matchgroup=typstCodeStatementWord start=/show/
-    \ matchgroup=Noise end=/\v%(:|$)/ keepend
+    \ matchgroup=typstCodeStatementWord start=/\<show\>/
+    \ matchgroup=Noise end=/:/
     \ contains=@typstCode
     \ skipwhite nextgroup=@typstCode,typstCodeShowRocket
 syntax match typstCodeShowRocket
@@ -249,15 +249,15 @@ syntax region typstHashtagRepeat
     \ start=/\v#(while|for)>/ end=/\v\ze(\{|\[)/
     \ contains=@typstCode
 syntax match typstHashtagKeyword
-    \ /\v#(return)>/
+    \ /#return\>/
     \ skipwhite nextgroup=@typstCode
 syntax region typstHashtagStatement
     \ matchgroup=typstHashtagStatementWord start=/\v#(let|set|import|include|context)>/
     \ matchgroup=Noise end=/\v%(;|$)/
     \ contains=@typstCode
 syntax region typstHashtagStatement
-    \ matchgroup=typstHashtagStatementWord start=/#show/
-    \ matchgroup=Noise end=/\v%(:|$)/ keepend
+    \ matchgroup=typstHashtagStatementWord start=/#show\>/
+    \ matchgroup=Noise end=/:/
     \ contains=@typstCode
     \ skipwhite nextgroup=@typstCode,typstCodeShowRocket
 
