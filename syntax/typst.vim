@@ -38,6 +38,30 @@ syntax cluster typstCode
             \ ,@typstCodeFunctions
             \ ,@typstCodeParens
 
+" Code > Identifiers {{{2
+syntax cluster typstCodeIdentifiers
+    \ contains=typstCodeIdentifier
+            \ ,typstCodeFieldAccess
+syntax match typstCodeIdentifier
+    \ contained
+    \ /\v<\K%(\k|-)*>[\.\[\(]@!/
+syntax match typstCodeFieldAccess
+    \ contained
+    \ /\v<\K%(\k|-)*>\.[\[\(]@!/
+    \ nextgroup=typstCodeFieldAccess,typstCodeFunction
+
+" Code > Functions {{{2
+syntax cluster typstCodeFunctions
+    \ contains=typstCodeFunction
+syntax match typstCodeFunction
+    \ contained
+    \ /\v<\K%(\k|-)*>[\(\[]@=/
+    \ nextgroup=typstCodeFunctionArgument
+syntax match typstCodeFunctionArgument
+    \ contained
+    \ /\v%(%(\(.{-}\)|\[.{-}\]|\{.{-}\}))*/ transparent
+    \ contains=@typstCode
+
 " Code > Keywords {{{2
 syntax cluster typstCodeKeywords
     \ contains=typstCodeConditional
@@ -69,30 +93,6 @@ syntax match typstCodeShowRocket
     \ /.*=>/
     \ contains=@typstCode
     \ skipwhite nextgroup=@typstCode
-
-" Code > Identifiers {{{2
-syntax cluster typstCodeIdentifiers
-    \ contains=typstCodeIdentifier
-            \ ,typstCodeFieldAccess
-syntax match typstCodeIdentifier
-    \ contained
-    \ /\v<\K%(\k|-)*>(<%(let|set|show|import|include|context))@<![\.\[\(]@!/
-syntax match typstCodeFieldAccess
-    \ contained
-    \ /\v<\K%(\k|-)*>(<%(let|set|show|import|include|context))@<!\.[\[\(]@!/
-    \ nextgroup=typstCodeFieldAccess,typstCodeFunction
-
-" Code > Functions {{{2
-syntax cluster typstCodeFunctions
-    \ contains=typstCodeFunction
-syntax match typstCodeFunction
-    \ contained
-    \ /\v<\K%(\k|-)*>(<%(let|set|show|import|include|context))@<![\(\[]@=/
-    \ nextgroup=typstCodeFunctionArgument
-syntax match typstCodeFunctionArgument
-    \ contained
-    \ /\v%(%(\(.{-}\)|\[.{-}\]|\{.{-}\}))*/ transparent
-    \ contains=@typstCode
 
 " Code > Constants {{{2
 syntax cluster typstCodeConstants
@@ -160,6 +160,53 @@ syntax cluster typstHashtag
             \ ,@typstHashtagFunctions
             \ ,@typstHashtagParens
 
+" Hashtag > Constants {{{2
+syntax cluster typstHashtagConstants
+    \ contains=typstHashtagConstant
+syntax match typstHashtagConstant
+    \ /\v#(none|auto|true|false)>/
+
+" Hashtag > Identifiers {{{2
+syntax cluster typstHashtagIdentifiers
+    \ contains=typstHashtagIdentifier
+            \ ,typstHashtagFieldAccess
+syntax match typstHashtagIdentifier
+    \ /\v#\K%(\k|-)*>[\.\[\(]@!/
+syntax match typstHashtagFieldAccess
+    \ /\v#\K%(\k|-)*>\.[\[\(]@!/
+    \ nextgroup=typstCodeFieldAccess,typstCodeFunction
+
+if g:typst_conceal_emoji
+    runtime! syntax/typst-emoji.vim
+endif
+
+
+" Hashtag > Functions {{{2
+syntax cluster typstHashtagFunctions
+    \ contains=typstHashtagFunction
+syntax match typstHashtagFunction
+    \ /\v#\K%(\k|-)*>[\(\[]@=/
+    \ nextgroup=typstCodeFunctionArgument
+
+" Hashtag > Parens {{{2
+syntax cluster typstHashtagParens
+    \ contains=typstHashtagParen
+            \ ,typstHashtagBrace
+            \ ,typstHashtagBracket
+            \ ,typstHashtagDollar
+syntax region typstHashtagParen
+    \ matchgroup=Noise start=/#(/ end=/)/
+    \ contains=@typstCode
+syntax region typstHashtagBrace
+    \ matchgroup=Noise start=/#{/ end=/}/
+    \ contains=@typstCode
+syntax region typstHashtagBracket
+    \ matchgroup=Noise start=/#\[/ end=/\]/
+    \ contains=@typstMarkup
+syntax region typstHashtagDollar
+    \ matchgroup=Noise start=/#\$/ end=/\\\@<!\$/
+    \ contains=@typstMath
+
 " Hashtag > Keywords {{{2
 syntax cluster typstHashtagKeywords
     \ contains=typstHashtagConditional
@@ -193,53 +240,6 @@ syntax region typstHashtagStatement
     \ matchgroup=Noise end=/\v%(:|$)/ keepend
     \ contains=@typstCode
     \ skipwhite nextgroup=@typstCode,typstCodeShowRocket
-
-" Hashtag > Constants {{{2
-syntax cluster typstHashtagConstants
-    \ contains=typstHashtagConstant
-syntax match typstHashtagConstant
-    \ /\v#(none|auto|true|false)>/
-
-" Hashtag > Identifiers {{{2
-syntax cluster typstHashtagIdentifiers
-    \ contains=typstHashtagIdentifier
-            \ ,typstHashtagFieldAccess
-syntax match typstHashtagIdentifier
-    \ /\v#\K%(\k|-)*>(<%(let|set|show|import|include|context))@<![\.\[\(]@!/
-syntax match typstHashtagFieldAccess
-    \ /\v#\K%(\k|-)*>(<%(let|set|show|import|include|context))@<!\.[\[\(]@!/
-    \ nextgroup=typstCodeFieldAccess,typstCodeFunction
-
-if g:typst_conceal_emoji
-    runtime! syntax/typst-emoji.vim
-endif
-
-
-" Hashtag > Functions {{{2
-syntax cluster typstHashtagFunctions
-    \ contains=typstHashtagFunction
-syntax match typstHashtagFunction
-    \ /\v#\K%(\k|-)*>(<%(let|set|show|import|include|context))@<![\(\[]@=/
-    \ nextgroup=typstCodeFunctionArgument
-
-" Hashtag > Parens {{{2
-syntax cluster typstHashtagParens
-    \ contains=typstHashtagParen
-            \ ,typstHashtagBrace
-            \ ,typstHashtagBracket
-            \ ,typstHashtagDollar
-syntax region typstHashtagParen
-    \ matchgroup=Noise start=/#(/ end=/)/
-    \ contains=@typstCode
-syntax region typstHashtagBrace
-    \ matchgroup=Noise start=/#{/ end=/}/
-    \ contains=@typstCode
-syntax region typstHashtagBracket
-    \ matchgroup=Noise start=/#\[/ end=/\]/
-    \ contains=@typstMarkup
-syntax region typstHashtagDollar
-    \ matchgroup=Noise start=/#\$/ end=/\\\@<!\$/
-    \ contains=@typstMath
 
 
 " Markup {{{1
@@ -478,4 +478,4 @@ highlight default typstMarkupBoldItalic                 term=bold,italic        
 
 let b:current_syntax = "typst"
 
-" vim: sw=4 sts=4 et fdm=marker fdl=0 
+" vim: sw=4 sts=4 et fdm=marker fdl=0
