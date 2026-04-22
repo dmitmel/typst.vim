@@ -73,6 +73,7 @@ syntax match typstCodeFunctionArgument
     \ contains=@typstCode
 
 " Code > Keywords {{{2
+" NOTE: The keywords must come after everything user functions and variables!
 syntax cluster typstCodeKeywords
     \ contains=typstCodeConditional
             \ ,typstCodeRepeat
@@ -166,7 +167,6 @@ syntax region typstCodeDollar
 syntax cluster typstHashtag
     \ contains=@typstHashtagKeywords
             \ ,@typstHashtagConstants
-            \ ,@typstHashtagIdentifiers
             \ ,@typstHashtagFunctions
             \ ,@typstHashtagParens
 
@@ -176,27 +176,39 @@ syntax cluster typstHashtagConstants
 syntax match typstHashtagConstant
     \ /\v#(none|auto|true|false)>/
 
-" Hashtag > Identifiers {{{2
-syntax cluster typstHashtagIdentifiers
-    \ contains=typstHashtagIdentifier
-            \ ,typstHashtagFieldAccess
-syntax match typstHashtagIdentifier
-    \ /\v#\K%(\k|-)*>[\.\[\(]@!/
-syntax match typstHashtagFieldAccess
-    \ /\v#\K%(\k|-)*>\.[\[\(]@!/
-    \ nextgroup=typstCodeFieldAccess,typstCodeFunction
+" Hashtag > Identifiers & Functions {{{2
+
+syntax cluster typstHashtagAfterIdentifier
+    \ contains=typstHashtagFieldAccess,typstHashtagMethodCall
+
+syntax match typstHashtagIdentifier /\v#\K%(\k|-)*>/ nextgroup=@typstHashtagAfterIdentifier
+syntax cluster typstHashtag add=typstHashtagIdentifier
+
+syntax match typstHashtagFieldAccess contained /\v\.\K%(\k|-)*>/ nextgroup=@typstHashtagAfterIdentifier
+" Must come after typstHashtagFieldAccess
+syntax match typstHashtagMethodCall contained /\v\.\K%(\k|-)*>[\(\[]@=/ nextgroup=typstHashtagFunctionArguments
+
+" Must come after typstHashtagIdentifier
+syntax match typstHashtagFunction /\v#\K%(\k|-)*>[\(\[]@=/ nextgroup=typstHashtagFunctionArguments
+syntax cluster typstHashtag add=typstHashtagFunction
+
+syntax region typstHashtagFunctionArguments
+    \ contained
+    \ matchgroup=Noise start=/(/ end=/)/
+    \ contains=@typstCode
+    \ nextgroup=@typstHashtagAfterIdentifier
+
+syntax region typstHashtagFunctionArguments
+    \ contained
+    \ matchgroup=Noise start=/\[/ end=/\]/
+    \ contains=@typstMarkup
+    \ nextgroup=@typstHashtagAfterIdentifier
+
 
 if g:typst_conceal_emoji
     runtime! syntax/typst-emoji.vim
 endif
 
-
-" Hashtag > Functions {{{2
-syntax cluster typstHashtagFunctions
-    \ contains=typstHashtagFunction
-syntax match typstHashtagFunction
-    \ /\v#\K%(\k|-)*>[\(\[]@=/
-    \ nextgroup=typstCodeFunctionArgument
 
 " Hashtag > Parens {{{2
 syntax cluster typstHashtagParens
@@ -434,6 +446,7 @@ highlight default link typstHashtagConstant         Constant
 highlight default link typstHashtagStatementWord    Statement
 highlight default link typstHashtagIdentifier       Identifier
 highlight default link typstHashtagFieldAccess      Identifier
+highlight default link typstHashtagMethodCall       Function
 highlight default link typstHashtagFunction         Function
 highlight default link typstHashtagParen            Noise
 highlight default link typstHashtagBrace            Noise
