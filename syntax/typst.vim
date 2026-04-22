@@ -45,32 +45,33 @@ syntax cluster typstCode
             \ ,@typstCodeKeywords
             \ ,@typstCodeConstants
             \ ,@typstCodeIdentifiers
-            \ ,@typstCodeFunctions
             \ ,@typstCodeParens
 
-" Code > Identifiers {{{2
-syntax cluster typstCodeIdentifiers
-    \ contains=typstCodeIdentifier
-            \ ,typstCodeFieldAccess
-syntax match typstCodeIdentifier
-    \ contained
-    \ /\v<\K%(\k|-)*>[\.\[\(]@!/
-syntax match typstCodeFieldAccess
-    \ contained
-    \ /\v<\K%(\k|-)*>\.[\[\(]@!/
-    \ nextgroup=typstCodeFieldAccess,typstCodeFunction
+" Code > Identifiers & Functions {{{2
+syntax cluster typstCodeAfterIdentifier contains=typstCodeFieldAccess,typstCodeMethodCall
 
-" Code > Functions {{{2
-syntax cluster typstCodeFunctions
-    \ contains=typstCodeFunction
-syntax match typstCodeFunction
+syntax match typstCodeIdentifier contained /\v<\K%(\k|-)*>/ nextgroup=@typstCodeAfterIdentifier
+syntax cluster typstCode add=typstCodeIdentifier
+" " Must come after typstCodeIdentifier
+syntax match typstCodeFunction contained /\v<\K%(\k|-)*>[\(\[]@=/ nextgroup=typstCodeFunctionArguments
+syntax cluster typstCode add=typstCodeFunction
+
+syntax match typstCodeFieldAccess contained /\v\.\K%(\k|-)*>/hs=s+1 nextgroup=@typstCodeAfterIdentifier
+" Must come after typstCodeFieldAccess
+syntax match typstCodeMethodCall contained /\v\.\K%(\k|-)*>[\(\[]@=/hs=s+1 nextgroup=typstCodeFunctionArguments
+
+syntax region typstCodeFunctionArguments
     \ contained
-    \ /\v<\K%(\k|-)*>[\(\[]@=/
-    \ nextgroup=typstCodeFunctionArgument
-syntax match typstCodeFunctionArgument
-    \ contained
-    \ /\v%(%(\(.{-}\)|\[.{-}\]|\{.{-}\}))*/ transparent
+    \ matchgroup=Noise start=/(/ end=/)/
     \ contains=@typstCode
+    \ nextgroup=@typstCodeAfterIdentifier
+
+syntax region typstCodeFunctionArguments
+    \ contained
+    \ matchgroup=Noise start=/\[/ end=/\]/
+    \ contains=@typstMarkup
+    \ nextgroup=@typstCodeAfterIdentifier
+
 
 " Code > Keywords {{{2
 " NOTE: The keywords must come after everything user functions and variables!
@@ -167,7 +168,6 @@ syntax region typstCodeDollar
 syntax cluster typstHashtag
     \ contains=@typstHashtagKeywords
             \ ,@typstHashtagConstants
-            \ ,@typstHashtagFunctions
             \ ,@typstHashtagParens
 
 " Hashtag > Constants {{{2
@@ -178,19 +178,17 @@ syntax match typstHashtagConstant
 
 " Hashtag > Identifiers & Functions {{{2
 
-syntax cluster typstHashtagAfterIdentifier
-    \ contains=typstHashtagFieldAccess,typstHashtagMethodCall
+syntax cluster typstHashtagAfterIdentifier contains=typstHashtagFieldAccess,typstHashtagMethodCall
 
 syntax match typstHashtagIdentifier /\v#\K%(\k|-)*>/ nextgroup=@typstHashtagAfterIdentifier
 syntax cluster typstHashtag add=typstHashtagIdentifier
+" Must come after typstHashtagIdentifier
+syntax match typstHashtagFunction /\v#\K%(\k|-)*>[\(\[]@=/ nextgroup=typstHashtagFunctionArguments
+syntax cluster typstHashtag add=typstHashtagFunction
 
 syntax match typstHashtagFieldAccess contained /\v\.\K%(\k|-)*>/hs=s+1 nextgroup=@typstHashtagAfterIdentifier
 " Must come after typstHashtagFieldAccess
 syntax match typstHashtagMethodCall contained /\v\.\K%(\k|-)*>[\(\[]@=/hs=s+1 nextgroup=typstHashtagFunctionArguments
-
-" Must come after typstHashtagIdentifier
-syntax match typstHashtagFunction /\v#\K%(\k|-)*>[\(\[]@=/ nextgroup=typstHashtagFunctionArguments
-syntax cluster typstHashtag add=typstHashtagFunction
 
 syntax region typstHashtagFunctionArguments
     \ contained
@@ -433,6 +431,7 @@ highlight default link typstCodeLabel               Structure
 highlight default link typstCodeStatementWord       Statement
 highlight default link typstCodeIdentifier          Identifier
 highlight default link typstCodeFieldAccess         Identifier
+highlight default link typstCodeMethodCall          Function
 highlight default link typstCodeFunction            Function
 highlight default link typstCodeParen               Noise
 highlight default link typstCodeBrace               Noise
