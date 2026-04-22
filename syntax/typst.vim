@@ -3,10 +3,20 @@
 " Maintainer: Kaj Munhoz Arfvidsson
 " Upstream: https://github.com/kaarmu/typst.vim
 
-if exists("b:current_syntax") | finish | endif
+if exists("b:current_syntax")
+    finish
+endif
 
 call typst#options#init()
-if !g:typst_syntax_highlight | finish | endif
+if !g:typst_syntax_highlight
+    finish
+endif
+
+if g:typst_conceal
+    command! -nargs=* TypstConcealends <args> concealends
+else
+    command! -nargs=* TypstConcealends <args>
+endif
 
 syntax sync fromstart
 syntax spell toplevel
@@ -275,16 +285,9 @@ syntax match typstMarkupRawInline
 syntax region typstMarkupRawBlock
     \ matchgroup=Macro start=/```\w*/
     \ matchgroup=Macro end=/```/ keepend
-if g:typst_conceal
-    syntax region typstMarkupCodeBlockTypst
-        \ matchgroup=Macro start=/```typst/
-        \ matchgroup=Macro end=/```/ contains=@typstCode keepend
-        \ concealends
-else
-    syntax region typstMarkupCodeBlockTypst
-        \ matchgroup=Macro start=/```typst/
-        \ matchgroup=Macro end=/```/ contains=@typstCode keepend
-endif
+TypstConcealends syntax region typstMarkupCodeBlockTypst
+    \ matchgroup=Macro start=/```typst/
+    \ matchgroup=Macro end=/```/ contains=@typstCode keepend
 runtime! syntax/typst-embedded.vim
 
 " Label & Reference
@@ -323,29 +326,16 @@ syntax match typstMarkupBoldItalic
     \ contained
     \ /\v(\w|\\)@1<![_\*]\S@=.{-}(\n.{-1,})*\S@1<=\\@1<!\2/
     \ contains=typstMarkupBoldRegion,typstMarkupItalicRegion
-if g:typst_conceal
-    syntax region typstMarkupBoldRegion
-        \ contained
-        \ transparent matchgroup=typstMarkupBold
-        \ start=/\(^\|[^0-9a-zA-Z]\)\@<=\*/ end=/\*\($\|[^0-9a-zA-Z]\)\@=/
-        \ concealends contains=typstMarkupBoldItalic,typstMarkupLabel,@Spell
-    syntax region typstMarkupItalicRegion
-        \ contained
-        \ transparent matchgroup=typstMarkupItalic
-        \ start=/\(^\|[^0-9a-zA-Z]\)\@<=_/ end=/_\($\|[^0-9a-zA-Z]\)\@=/
-        \ concealends contains=typstMarkupBoldItalic,typstMarkupLabel,@Spell
-else
-    syntax region typstMarkupBoldRegion
-        \ contained
-        \ transparent matchgroup=typstMarkupBold
-        \ start=/\(^\|[^0-9a-zA-Z]\)\@<=\*/ end=/\*\($\|[^0-9a-zA-Z]\)\@=/
-        \ contains=typstMarkupBoldItalic,typstMarkupLabel,@Spell
-    syntax region typstMarkupItalicRegion
-        \ contained
-        \ transparent matchgroup=typstMarkupItalic
-        \ start=/\(^\|[^0-9a-zA-Z]\)\@<=_/ end=/_\($\|[^0-9a-zA-Z]\)\@=/
-        \ contains=typstMarkupBoldItalic,typstMarkupLabel,@Spell
-endif
+TypstConcealends syntax region typstMarkupBoldRegion
+    \ contained
+    \ transparent matchgroup=typstMarkupBold
+    \ start=/\(^\|[^0-9a-zA-Z]\)\@<=\*/ end=/\*\($\|[^0-9a-zA-Z]\)\@=/
+    \ contains=typstMarkupBoldItalic,typstMarkupLabel,@Spell
+TypstConcealends syntax region typstMarkupItalicRegion
+    \ contained
+    \ transparent matchgroup=typstMarkupItalic
+    \ start=/\(^\|[^0-9a-zA-Z]\)\@<=_/ end=/_\($\|[^0-9a-zA-Z]\)\@=/
+    \ contains=typstMarkupBoldItalic,typstMarkupLabel,@Spell
 
 " Linebreak & Special Whitespace
 syntax match typstMarkupLinebreak
@@ -477,5 +467,7 @@ highlight default typstMarkupBoldItalic                 term=bold,italic        
 " }}}1
 
 let b:current_syntax = "typst"
+
+delcommand TypstConcealends
 
 " vim: sw=4 sts=4 et fdm=marker fdl=0
