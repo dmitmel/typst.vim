@@ -50,15 +50,15 @@ syntax cluster typstCode
 " Code > Identifiers & Functions {{{2
 syntax cluster typstCodeAfterIdentifier contains=typstCodeFieldAccess,typstCodeMethodCall
 
-syntax match typstCodeIdentifier contained /\v<\K%(\k|-)*>/ nextgroup=@typstCodeAfterIdentifier
+syntax match typstCodeIdentifier contained /\v<\K%(\k|-)*>/ nextgroup=@typstCodeAfterIdentifier skipwhite skipempty
 syntax cluster typstCode add=typstCodeIdentifier
 " " Must come after typstCodeIdentifier
-syntax match typstCodeFunction contained /\v<\K%(\k|-)*>[\(\[]@=/ nextgroup=typstCodeFunctionArguments
+syntax match typstCodeFunction contained /\v<\K%(\k|-)*>[\(\[]@=/ nextgroup=typstCodeFunctionArguments skipwhite skipempty
 syntax cluster typstCode add=typstCodeFunction
 
-syntax match typstCodeFieldAccess contained /\v\.\K%(\k|-)*>/hs=s+1 nextgroup=@typstCodeAfterIdentifier
-" Must come after typstCodeFieldAccess
-syntax match typstCodeMethodCall contained /\v\.\K%(\k|-)*>[\(\[]@=/hs=s+1 nextgroup=typstCodeFunctionArguments
+syntax match typstCodeFieldAccess contained /\v\.\s*\K%(\k|-)*>/hs=s+1 nextgroup=@typstCodeAfterIdentifier skipwhite skipempty
+" Must come after typstCodeFieldAccess. Note that you can't have a newline after the dot.
+syntax match typstCodeMethodCall contained /\v\.\s*\K%(\k|-)*>[\(\[]@=/hs=s+1 nextgroup=typstCodeFunctionArguments skipwhite skipempty
 
 syntax region typstCodeFunctionArguments
     \ contained
