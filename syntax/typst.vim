@@ -216,23 +216,26 @@ endif
 
 " Hashtag > Parens {{{2
 syntax cluster typstHashtagParens
-    \ contains=typstHashtagParen
-            \ ,typstHashtagBrace
-            \ ,typstHashtagBracket
+    \ contains=typstHashtagParenRegion
+            \ ,typstHashtagBraceRegion
+            \ ,typstHashtagBracketRegion
             \ ,typstHashtagDollar
 
-syntax region typstHashtagParen
-    \ matchgroup=Noise start=/#(/ end=/)/
+syntax region typstHashtagParenRegion
+    \ transparent
+    \ matchgroup=typstHashtagParen start=/#(/ end=/)/
     \ contains=@typstCode
     \ nextgroup=@typstHashtagMemberAccess
 
-syntax region typstHashtagBrace
-    \ matchgroup=Noise start=/#{/ end=/}/
+syntax region typstHashtagBraceRegion
+    \ transparent
+    \ matchgroup=typstHashtagBrace start=/#{/ end=/}/
     \ contains=@typstCode
     \ nextgroup=@typstHashtagMemberAccess
 
-syntax region typstHashtagBracket
-    \ matchgroup=Noise start=/#\[/ end=/\]/
+syntax region typstHashtagBracketRegion
+    \ transparent
+    \ matchgroup=typstHashtagBracket start=/#\[/ end=/\]/
     \ contains=@typstMarkup
     \ nextgroup=@typstHashtagMemberAccess
 
@@ -465,9 +468,9 @@ highlight default link typstHashtagIdentifier       Identifier
 highlight default link typstHashtagFieldAccess      Identifier
 highlight default link typstHashtagMethodCall       Function
 highlight default link typstHashtagFunction         Function
-highlight default link typstHashtagParen            Noise
-highlight default link typstHashtagBrace            Noise
-highlight default link typstHashtagBracket          Noise
+highlight default link typstHashtagParen            PreProc
+highlight default link typstHashtagBrace            PreProc
+highlight default link typstHashtagBracket          PreProc
 highlight default link typstHashtagDollar           Noise
 highlight default link typstMarkupRawInline         Macro
 highlight default link typstMarkupRawBlock          Macro
