@@ -365,7 +365,7 @@ TypstConcealends syntax region typstMarkupItalicRegion
 
 " Linebreak & Special Whitespace
 syntax match typstMarkupLinebreak
-    \ /\\\\/
+    \ /\\/
 syntax match typstMarkupNonbreakingSpace
     \ /\~/
 
@@ -419,8 +419,8 @@ if g:typst_conceal_math
     runtime! syntax/typst-symbols.vim
 endif
 
-" Must come absolutely last, so that it takes priority over any other pattern!
-syntax match typstEscaped /\\\%(u{\x*}\|.\)/
+" Must come absolutely last, so that it takes priority over every other pattern!
+syntax match typstEscaped /\\u{\x*}\|\\[^[:space:]]/
 syntax cluster typstMarkup add=typstEscaped
 
 
