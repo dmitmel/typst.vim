@@ -188,17 +188,32 @@ syntax match typstHashtagConstant
 
 " Hashtag > Identifiers & Functions {{{2
 
-syntax cluster typstHashtagMemberAccess contains=typstHashtagFieldAccess,typstHashtagMethodCall
+syntax cluster typstHashtagMemberAccess
+    \ contains=typstHashtagFieldAccess
+            \ ,typstHashtagMethodCall
+            \ ,typstHashtagFunctionArguments
 
-syntax match typstHashtagIdentifier /\v#\K%(\k|-)*>/ nextgroup=@typstHashtagMemberAccess
+syntax match typstHashtagIdentifier
+    \ /\v#\K%(\k|-)*>/
+    \ nextgroup=@typstHashtagMemberAccess
 syntax cluster typstHashtag add=typstHashtagIdentifier
+
 " Must come after typstHashtagIdentifier
-syntax match typstHashtagFunction /\v#\K%(\k|-)*>[\(\[]@=/ nextgroup=typstHashtagFunctionArguments
+syntax match typstHashtagFunction
+    \ /\v#\K%(\k|-)*>[\(\[]@=/
+    \ nextgroup=typstHashtagFunctionArguments
 syntax cluster typstHashtag add=typstHashtagFunction
 
-syntax match typstHashtagFieldAccess contained /\v\.\K%(\k|-)*>/hs=s+1 nextgroup=@typstHashtagMemberAccess
+syntax match typstHashtagFieldAccess
+    \ contained
+    \ /\v\.\K%(\k|-)*>/hs=s+1
+    \ nextgroup=@typstHashtagMemberAccess
+
 " Must come after typstHashtagFieldAccess
-syntax match typstHashtagMethodCall contained /\v\.\K%(\k|-)*>[\(\[]@=/hs=s+1 nextgroup=typstHashtagFunctionArguments
+syntax match typstHashtagMethodCall
+    \ contained
+    \ /\v\.\K%(\k|-)*>[\(\[]@=/hs=s+1
+    \ nextgroup=typstHashtagFunctionArguments
 
 syntax region typstHashtagFunctionArguments
     \ contained transparent
@@ -383,11 +398,7 @@ syntax match typstMarkupEllipsis
 
 " Markup > Parens {{{2
 syntax cluster typstMarkupParens
-    \ contains=typstMarkupBracket
-            \ ,typstMarkupDollar
-syntax region typstMarkupBracket
-    \ matchgroup=Noise start=/\[/ end=/\]/
-    \ contains=@typstMarkup
+    \ contains=typstMarkupDollar
 syntax region typstMarkupDollar
     \ matchgroup=Special start=/\\\@<!\$/ end=/\\\@<!\$/
     \ contains=@typstMath
