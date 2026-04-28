@@ -149,7 +149,7 @@ syntax cluster typstCodeParens
     \ contains=typstCodeParenRegion
             \ ,typstCodeBraceRegion
             \ ,typstCodeBracketRegion
-            \ ,typstCodeDollar
+            \ ,typstCodeDollarRegion
             \ ,typstMarkupRawInline
             \ ,typstMarkupRawBlock
 
@@ -168,9 +168,9 @@ syntax region typstCodeBracketRegion
     \ matchgroup=typstCodeBracket start=/\[/ end=/\]/
     \ contains=@typstMarkup
 
-syntax region typstCodeDollar
+syntax region typstCodeDollarRegion
     \ contained
-    \ matchgroup=Number start=/\\\@<!\$/ end=/\\\@<!\$/
+    \ matchgroup=typstCodeDollar start=/\$/ end=/\$/
     \ contains=@typstMath
 
 
@@ -238,7 +238,7 @@ syntax cluster typstHashtagParens
     \ contains=typstHashtagParenRegion
             \ ,typstHashtagBraceRegion
             \ ,typstHashtagBracketRegion
-            \ ,typstHashtagDollar
+            \ ,typstHashtagDollarRegion
 
 syntax region typstHashtagParenRegion
     \ transparent
@@ -258,8 +258,8 @@ syntax region typstHashtagBracketRegion
     \ contains=@typstMarkup
     \ nextgroup=@typstHashtagMemberAccess
 
-syntax region typstHashtagDollar
-    \ matchgroup=Noise start=/#\$/ end=/\\\@<!\$/
+syntax region typstHashtagDollarRegion
+    \ matchgroup=typstHashtagDollar start=/#\$/ end=/\$/
     \ contains=@typstMath
 
 " Hashtag > Keywords {{{2
@@ -303,7 +303,6 @@ syntax cluster typstMarkup
             \ ,@Spell
             \ ,@typstHashtag
             \ ,@typstMarkupText
-            \ ,@typstMarkupParens
 
 " Markup > Text {{{2
 syntax cluster typstMarkupText
@@ -323,6 +322,7 @@ syntax cluster typstMarkupText
             \ ,typstMarkupSoftHyphen
             \ ,typstMarkupDash
             \ ,typstMarkupEllipsis
+            \ ,typstMarkupDollarRegion
 
 " Raw Text
 syntax match typstMarkupRawInline
@@ -396,11 +396,8 @@ syntax match typstMarkupDash
 syntax match typstMarkupEllipsis
     \ /\.\.\./
 
-" Markup > Parens {{{2
-syntax cluster typstMarkupParens
-    \ contains=typstMarkupDollar
-syntax region typstMarkupDollar
-    \ matchgroup=Special start=/\\\@<!\$/ end=/\\\@<!\$/
+syntax region typstMarkupDollarRegion
+    \ matchgroup=typstMarkupDollar start=/\$/ end=/\$/
     \ contains=@typstMath
 
 
@@ -472,7 +469,7 @@ highlight default link typstCodeFunction            Function
 highlight default link typstCodeParen               Noise
 highlight default link typstCodeBrace               Noise
 highlight default link typstCodeBracket             Noise
-highlight default link typstCodeDollar              Noise
+highlight default link typstCodeDollar              Special
 " highlight default link typstHashtagControlFlowError Error
 highlight default link typstHashtagConditional      Conditional
 highlight default link typstHashtagRepeat           Repeat
@@ -486,7 +483,7 @@ highlight default link typstHashtagFunction         Function
 highlight default link typstHashtagParen            PreProc
 highlight default link typstHashtagBrace            PreProc
 highlight default link typstHashtagBracket          PreProc
-highlight default link typstHashtagDollar           Noise
+highlight default link typstHashtagDollar           Special
 highlight default link typstMarkupRawInline         Macro
 highlight default link typstMarkupRawBlock          Macro
 highlight default link typstMarkupLabel             Structure
@@ -502,7 +499,7 @@ highlight default link typstMarkupSoftHyphen        Structure
 highlight default link typstMarkupDash              Structure
 highlight default link typstMarkupEllipsis          Structure
 highlight default link typstMarkupTermMarker        Structure
-highlight default link typstMarkupDollar            Noise
+highlight default link typstMarkupDollar            Special
 
 highlight default link typstEscaped Special
 
