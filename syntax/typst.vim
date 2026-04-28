@@ -48,18 +48,21 @@ syntax cluster typstCode
             \ ,@typstCodeParens
 
 " Code > Identifiers & Functions {{{2
+syntax cluster typstCode add=typstCodeIdentifier,typstCodeFunction
+
+" The `\%(-*\)\@>` construct will consume all dashes in front of an identifier. It
+" is necessary so that, for instance, `--` doesn't get highlighted as a minus
+" in front of a variable named `-`.
 syntax match typstCodeIdentifier
     \ contained
-    \ /\v<\K%(\k|-)*>/
+    \ /\<\%(-*\)\@>\zs\K\%(\k\|-\)*\>/
     \ skipwhite skipempty nextgroup=typstCodeIdentifierDot
-syntax cluster typstCode add=typstCodeIdentifier
 
-" " Must come after typstCodeIdentifier
+" Must come after typstCodeIdentifier
 syntax match typstCodeFunction
     \ contained
-    \ /\v<\K%(\k|-)*>[\(\[]@=/
+    \ /\<\%(-*\)\@>\zs\K\%(\k\|-\)*\>\ze[\(\[]/
     \ skipwhite skipempty nextgroup=typstCodeFunctionArguments
-syntax cluster typstCode add=typstCodeFunction
 
 syntax match typstCodeIdentifierDot
     \ contained
@@ -187,6 +190,7 @@ syntax match typstHashtagConstant
     \ /\v#(none|auto|true|false)>/
 
 " Hashtag > Identifiers & Functions {{{2
+syntax cluster typstHashtag add=typstHashtagIdentifier,typstHashtagFunction
 
 syntax cluster typstHashtagMemberAccess
     \ contains=typstHashtagFieldAccess
@@ -194,25 +198,23 @@ syntax cluster typstHashtagMemberAccess
             \ ,typstHashtagFunctionArguments
 
 syntax match typstHashtagIdentifier
-    \ /\v#\K%(\k|-)*>/
+    \ /#-\@!\K\%(\k\|-\)*\>/
     \ nextgroup=@typstHashtagMemberAccess
-syntax cluster typstHashtag add=typstHashtagIdentifier
 
 " Must come after typstHashtagIdentifier
 syntax match typstHashtagFunction
-    \ /\v#\K%(\k|-)*>[\(\[]@=/
+    \ /#-\@!\K\%(\k\|-\)*\>\ze[\(\[]/
     \ nextgroup=typstHashtagFunctionArguments
-syntax cluster typstHashtag add=typstHashtagFunction
 
 syntax match typstHashtagFieldAccess
     \ contained
-    \ /\v\.\K%(\k|-)*>/hs=s+1
+    \ /\.-\@!\K\%(\k\|-\)*\>/hs=s+1
     \ nextgroup=@typstHashtagMemberAccess
 
 " Must come after typstHashtagFieldAccess
 syntax match typstHashtagMethodCall
     \ contained
-    \ /\v\.\K%(\k|-)*>[\(\[]@=/hs=s+1
+    \ /\.-\@!\K\%(\k\|-\)*\>\ze[\(\[]/hs=s+1
     \ nextgroup=typstHashtagFunctionArguments
 
 syntax region typstHashtagFunctionArguments
