@@ -67,14 +67,14 @@ syntax match typstCodeIdentifierDot
     \ skipwhite skipempty nextgroup=typstCodeIdentifier,typstCodeFunction
 
 syntax region typstCodeFunctionArguments
-    \ contained
-    \ matchgroup=Noise start=/(/ end=/)/
+    \ contained transparent
+    \ matchgroup=typstCodeParen start=/(/ end=/)/
     \ contains=@typstCode
     \ skipwhite skipempty nextgroup=typstCodeIdentifierDot
 
 syntax region typstCodeFunctionArguments
-    \ contained
-    \ matchgroup=Noise start=/\[/ end=/\]/
+    \ contained transparent
+    \ matchgroup=typstCodeBracket start=/\[/ end=/\]/
     \ contains=@typstMarkup
     \ skipwhite skipempty nextgroup=typstCodeIdentifierDot
 
@@ -146,24 +146,28 @@ syntax match typstCodeLabel
 
 " Code > Parens {{{2
 syntax cluster typstCodeParens
-    \ contains=typstCodeParen
-            \ ,typstCodeBrace
-            \ ,typstCodeBracket
+    \ contains=typstCodeParenRegion
+            \ ,typstCodeBraceRegion
+            \ ,typstCodeBracketRegion
             \ ,typstCodeDollar
             \ ,typstMarkupRawInline
             \ ,typstMarkupRawBlock
-syntax region typstCodeParen
-    \ contained
-    \ matchgroup=Noise start=/(/ end=/)/
+
+syntax region typstCodeParenRegion
+    \ contained transparent
+    \ matchgroup=typstCodeParen start=/(/ end=/)/
     \ contains=@typstCode
-syntax region typstCodeBrace
-    \ contained
-    \ matchgroup=Noise start=/{/ end=/}/
+
+syntax region typstCodeBraceRegion
+    \ contained transparent
+    \ matchgroup=typstCodeBrace start=/{/ end=/}/
     \ contains=@typstCode
-syntax region typstCodeBracket
-    \ contained
-    \ matchgroup=Noise start=/\[/ end=/\]/
+
+syntax region typstCodeBracketRegion
+    \ contained transparent
+    \ matchgroup=typstCodeBracket start=/\[/ end=/\]/
     \ contains=@typstMarkup
+
 syntax region typstCodeDollar
     \ contained
     \ matchgroup=Number start=/\\\@<!\$/ end=/\\\@<!\$/
@@ -197,14 +201,14 @@ syntax match typstHashtagFieldAccess contained /\v\.\K%(\k|-)*>/hs=s+1 nextgroup
 syntax match typstHashtagMethodCall contained /\v\.\K%(\k|-)*>[\(\[]@=/hs=s+1 nextgroup=typstHashtagFunctionArguments
 
 syntax region typstHashtagFunctionArguments
-    \ contained
-    \ matchgroup=Noise start=/(/ end=/)/
+    \ contained transparent
+    \ matchgroup=typstCodeParen start=/(/ end=/)/
     \ contains=@typstCode
     \ nextgroup=@typstHashtagMemberAccess
 
 syntax region typstHashtagFunctionArguments
-    \ contained
-    \ matchgroup=Noise start=/\[/ end=/\]/
+    \ contained transparent
+    \ matchgroup=typstCodeBracket start=/\[/ end=/\]/
     \ contains=@typstMarkup
     \ nextgroup=@typstHashtagMemberAccess
 
