@@ -125,19 +125,33 @@ syntax cluster typstCodeConstants
 syntax match typstCodeConstant
     \ contained
     \ /\v<%(none|auto|true|false)-@!>/
-syntax match typstCodeInteger
-    \ contained
-    \ /\v<%(\d+|0b[01]+|0o[0-7]+|0x\x+)>/
+
+syntax cluster typstCodeFloatSuffixes
+    \ contains=typstCodeFloatRatio
+            \ ,typstCodeFloatLength
+            \ ,typstCodeFloatAngle
+            \ ,typstCodeFloatFraction
 
 " 1.0, 1., .0, 1.e6, 1.e-6, 1.e+6, 1e6
+" For the sake of simplicity, regular decimal integers like 123 are also matched by this rule.
 syntax match typstCodeFloat
     \ contained
-    \ /\v<%(%(\d+\.\d*|\.\d+)%([eE][+-]?\d+)?|\d+[eE][+-]?\d+)/
-    \ nextgroup=typstCodeFloatRatio ,typstCodeFloatLength ,typstCodeFloatAngle ,typstCodeFloatFraction
-syntax match typstCodeFloatRatio contained /%/
-syntax match typstCodeFloatLength contained /\v(pt|mm|cm|in|em)>/
-syntax match typstCodeFloatAngle contained /\v(deg|rad)>/
-syntax match typstCodeFloatFraction contained /fr\>/
+    \ /\v%(\d+\.\d*|\.\d+|\d+)%([eE][+-]?\d+)?/
+    \ nextgroup=typstCodeInvalidNumberSuffix,@typstCodeFloatSuffixes
+
+" Note that binary, octal and hexadecimal integers cannot have a unit suffix!
+syntax match typstCodeInteger
+    \ contained
+    \ /\v%(0b[01]+|0o\o+|0x\x+)/
+    \ nextgroup=typstCodeInvalidNumberSuffix
+
+" Must come *before* patterns for the valid suffixes, so that it gets lower priority when matching.
+syntax match typstCodeInvalidNumberSuffix contained /[[:alnum:]%]\+/
+
+syntax match typstCodeFloatRatio contained /%\%(\k\@!\|-\@=\)/
+syntax match typstCodeFloatLength contained /\%(pt\|mm\|cm\|in\|em\)\%(\>\|\ze-\)/
+syntax match typstCodeFloatAngle contained /\%(deg\|rad\)\%(\>\|\ze-\)/
+syntax match typstCodeFloatFraction contained /fr\%(\>\|\ze-\)/
 
 syntax region typstCodeString
     \ contained
@@ -456,6 +470,7 @@ highlight default link typstCodeKeyword             Keyword
 highlight default link typstCodeConstant            Constant
 highlight default link typstCodeInteger             Number
 highlight default link typstCodeFloat               Number
+highlight default link typstCodeInvalidNumberSuffix Error
 highlight default link typstCodeFloatLength         Number
 highlight default link typstCodeFloatAngle          Number
 highlight default link typstCodeFloatRatio          Number
