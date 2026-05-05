@@ -130,11 +130,11 @@ syntax cluster typstCodeConstants
 " Must come after typstCodeIdentifier
 syntax match typstCodeConstant
     \ contained
-    \ /\<\%(-*\)\@>\%(none\|auto\)\>/
+    \ /\<\%(-*\)\@>\zs\%(none\|auto\)\>/
 
 syntax match typstCodeBoolean
     \ contained
-    \ /\<\%(-*\)\@>\%(true\|false\)\>/
+    \ /\<\%(-*\)\@>\zs\%(true\|false\)\>/
 
 syntax cluster typstCodeFloatSuffixes
     \ contains=typstCodeFloatRatio
@@ -165,7 +165,7 @@ syntax match typstCodeFloatFraction contained /fr\%(\>\|\ze-\)/
 
 syntax region typstCodeString
     \ contained
-    \ start=/"/ skip=/\v\\\\|\\"/ end=/"/
+    \ start=/"/ skip=/\\\\\|\\"/ end=/"/
     \ contains=typstEscaped,@Spell
 syntax match typstCodeLabel
     \ contained
@@ -205,26 +205,13 @@ syntax region typstCodeDollarRegion
 syntax cluster typstHashtag
     \ contains=typstHashtagInvalidChar
             \ ,@typstHashtagKeywords
-            \ ,@typstHashtagConstants
             \ ,@typstHashtagParens
-
 
 " Basically all ASCII punctuation characters are invalid immediately following
 " a hashtag, apart from these: _, {, [, (, `, ", $. They will get matched by
 " syntax rules below, which will take priority and override this one. Whitespace
 " immediately after the hashtag is also invalid.
-syntax match typstHashtagInvalidChar /#[[:punct:][:space:]]/hs=s+1
-
-" Hashtag > Constants {{{2
-syntax cluster typstHashtagConstants
-    \ contains=typstHashtagConstant
-            \ ,typstHashtagBoolean
-
-syntax match typstHashtagConstant
-    \ /#\%(none\|auto\)\>/
-
-syntax match typstHashtagBoolean
-    \ /#\%(true\|false\)\>/
+syntax match typstHashtagInvalidChar /#\_./hs=s+1
 
 " Hashtag > Identifiers & Functions {{{2
 syntax cluster typstHashtag add=typstHashtagIdentifier,typstHashtagFunction
@@ -276,6 +263,49 @@ if g:typst_conceal_emoji
 endif
 
 
+" Hashtag > Constants {{{2
+syntax cluster typstHashtag add=
+    \ typstHashtagConstant,
+    \ typstHashtagBoolean,
+    \ typstHashtagString,
+    \ typstHashtagInteger,
+    \ typstHashtagFloat,
+    \ typstHashtagLabel,
+
+" Must come after typstHashtagIdentifier
+syntax match typstHashtagConstant
+    \ /#\%(none\|auto\)\>/
+    \ nextgroup=@typstHashtagMemberAccess
+
+syntax match typstHashtagBoolean
+    \ /#\%(true\|false\)\>/
+    \ nextgroup=@typstHashtagMemberAccess
+
+syntax region typstHashtagString
+    \ start=/#"/ skip=/\\\\\|\\"/ end=/"/
+    \ contains=typstEscaped,@Spell
+    \ nextgroup=@typstHashtagMemberAccess
+
+syntax match typstHashtagFloat
+    \ /\v#%(\d+\.\d*|\.\d+|\d+)%([eE][+-]?\d+)?[[:alnum:]%]*/he=s+1
+    \ contains=typstCodeFloat
+    \ nextgroup=@typstHashtagMemberAccess
+
+syntax match typstHashtagInteger
+    \ /#\%(0b[01]\+\|0o\o\+\|0x\x\+\)[[:alnum:]%]*/he=s+1
+    \ contains=typstCodeInteger
+    \ nextgroup=@typstHashtagMemberAccess
+
+syntax match typstHashtagLabel
+    \ /\v#\<%(\k|-)%(\k|:|\.|-)*\>/
+    \ nextgroup=@typstHashtagMemberAccess
+
+syntax region typstHashtagRawInline
+    \ start=/#`/ end=/`/ keepend
+    \ nextgroup=@typstHashtagMemberAccess
+
+" TODO: typstHashtagRawBlock
+
 " Hashtag > Parens {{{2
 syntax cluster typstHashtagParens
     \ contains=typstHashtagParenRegion
@@ -302,8 +332,10 @@ syntax region typstHashtagBracketRegion
     \ nextgroup=@typstHashtagMemberAccess
 
 syntax region typstHashtagDollarRegion
+    \ transparent
     \ matchgroup=typstHashtagDollar start=/#\$/ end=/\$/
     \ contains=@typstMath
+    \ nextgroup=@typstHashtagMemberAccess
 
 " Hashtag > Keywords {{{2
 syntax cluster typstHashtagKeywords
@@ -548,6 +580,11 @@ highlight default link typstHashtagRepeat           Repeat
 highlight default link typstHashtagKeyword          Keyword
 highlight default link typstHashtagConstant         Constant
 highlight default link typstHashtagBoolean          Boolean
+highlight default link typstHashtagString           String
+highlight default link typstHashtagInteger          Number
+highlight default link typstHashtagFloat            Number
+highlight default link typstHashtagLabel            Structure
+highlight default link typstHashtagRawInline        Special
 highlight default link typstHashtagStatementWord    Statement
 highlight default link typstHashtagIdentifier       Identifier
 highlight default link typstHashtagFieldAccess      Identifier
