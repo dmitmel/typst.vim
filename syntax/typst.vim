@@ -497,9 +497,9 @@ highlight default link typstHashtagIdentifier       Identifier
 highlight default link typstHashtagFieldAccess      Identifier
 highlight default link typstHashtagMethodCall       Function
 highlight default link typstHashtagFunction         Function
-highlight default link typstHashtagParen            PreProc
-highlight default link typstHashtagBrace            PreProc
-highlight default link typstHashtagBracket          PreProc
+highlight default link typstHashtagParen            Noise
+highlight default link typstHashtagBrace            Noise
+highlight default link typstHashtagBracket          Noise
 highlight default link typstHashtagDollar           Special
 highlight default link typstMarkupRawInline         Macro
 highlight default link typstMarkupRawBlock          Macro
