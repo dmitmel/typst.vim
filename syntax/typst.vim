@@ -440,7 +440,7 @@ syntax match typstMathNumber
     \ /\v<\d+>/
     \ contained
 syntax region typstMathQuote
-    \ matchgroup=String start=/"/ skip=/\\"/ end=/"/
+    \ matchgroup=String start=/"/ skip=/\\\\\|\\"/ end=/"/
     \ contained
 
 if g:typst_conceal_math
@@ -450,6 +450,7 @@ endif
 " Must come absolutely last, so that it takes priority over every other pattern!
 syntax match typstEscaped /\\u{\x*}\|\\[^[:space:]]/
 syntax cluster typstMarkup add=typstEscaped
+syntax cluster typstMath add=typstEscaped
 
 
 " Math > Linked groups {{{2
