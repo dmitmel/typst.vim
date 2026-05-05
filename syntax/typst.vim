@@ -320,11 +320,11 @@ syntax match typstHashtagControlFlow
     \ nextgroup=@typstCode
 syntax region typstHashtagConditional
     \ contained
-    \ start=/\v#if>/ end=/\v\ze(\{|\[)/
+    \ matchgroup=typstHashtagConditional start=/\v#if>/ end=/\v\ze(\{|\[)/
     \ contains=@typstCode
 syntax region typstHashtagRepeat
     \ contained
-    \ start=/\v#(while|for)>/ end=/\v\ze(\{|\[)/
+    \ matchgroup=typstHashtagRepeat start=/\v#(while|for)>/ end=/\v\ze(\{|\[)/
     \ contains=@typstCode
 syntax match typstHashtagKeyword
     \ /#return\>/
