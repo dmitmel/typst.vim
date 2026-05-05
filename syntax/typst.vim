@@ -21,31 +21,34 @@ endif
 syntax sync fromstart
 syntax spell toplevel
 
-" Common {{{1
-syntax cluster typstCommon
-    \ contains=@typstComment
-
-" Common > Comment {{{2
-syntax cluster typstComment
-    \ contains=typstCommentBlock,typstCommentLine
-syntax region typstCommentBlock
-    \ start="/\*" end="\*/" keepend
-    \ contains=typstCommentTodo,@Spell
-syntax match typstCommentLine
-    \ #//.*#
-    \ contains=typstCommentTodo,@Spell
-syntax keyword typstCommentTodo
-    \ contained
-    \ TODO FIXME XXX TBD
-
 
 " Code {{{1
 syntax cluster typstCode
-    \ contains=@typstCommon
+    \ contains=@typstComments
+            \ ,typstCodeInvalidChar
+            \ ,typstCodeOperator
             \ ,@typstCodeKeywords
             \ ,@typstCodeConstants
             \ ,@typstCodeIdentifiers
             \ ,@typstCodeParens
+
+" These characters never appear as part of valid tokens in code mode, with the
+" exception of %, which can get matched after a number.
+syntax match typstCodeInvalidChar contained /[#%&'?@\\^|~]/
+
+" On its own the exclamation sign is not a valid token, but it is part of the
+" `!=` inequality operator. `!` is not included in the list of invalid
+" characters because it is annoying to always get an error while you are typing
+" `!=`, so I tried making a rule that only matches an exclamation mark when it
+" is not directly in front of the cursor (`\%#` matches at the cursor position,
+" `\@!` negates this), so that an error is not shown immediately after `!` is
+" typed. However, I'm not sure if this rule can have any annoying side-effects
+" such as flickering or performance degradation, so I'm leaving it commented out.
+" syntax match typstCodeInvalidChar contained /!\%#\@!/
+
+" The list of all operators in the code mode:
+" <https://github.com/typst/typst/blob/v0.14.2/docs/reference/language/scripting.md#operators>
+syntax match typstCodeOperator contained /[-+/*<=>!]=\|[-+/*<=>]\|\.\./
 
 " Code > Identifiers & Functions {{{2
 syntax cluster typstCode add=typstCodeIdentifier,typstCodeFunction
@@ -200,9 +203,17 @@ syntax region typstCodeDollarRegion
 
 " Hashtag {{{1
 syntax cluster typstHashtag
-    \ contains=@typstHashtagKeywords
+    \ contains=typstHashtagInvalidChar
+            \ ,@typstHashtagKeywords
             \ ,@typstHashtagConstants
             \ ,@typstHashtagParens
+
+
+" Basically all ASCII punctuation characters are invalid immediately following
+" a hashtag, apart from these: _, {, [, (, `, ", $. They will get matched by
+" syntax rules below, which will take priority and override this one. Whitespace
+" immediately after the hashtag is also invalid.
+syntax match typstHashtagInvalidChar /#[[:punct:][:space:]]/hs=s+1
 
 " Hashtag > Constants {{{2
 syntax cluster typstHashtagConstants
@@ -331,7 +342,8 @@ syntax region typstHashtagStatement
 
 " Markup {{{1
 syntax cluster typstMarkup
-    \ contains=@typstCommon
+    \ contains=@typstComments
+            \ ,typstEscaped
             \ ,@Spell
             \ ,@typstHashtag
             \ ,@typstMarkupText
@@ -376,7 +388,7 @@ syntax match typstMarkupRefMarker
 
 " URL
 syntax match typstMarkupUrl
-    \ #\v\w+://\S*#
+    \ "\v\w+://\S*"
 
 " Heading
 syntax match typstMarkupHeading
@@ -435,7 +447,8 @@ syntax region typstMarkupDollarRegion
 
 " Math {{{1
 syntax cluster typstMath
-    \ contains=@typstCommon
+    \ contains=@typstComments
+            \ ,typstEscaped
             \ ,@typstHashtag
             \ ,typstMathIdentifier
             \ ,typstMathFunction
@@ -463,17 +476,34 @@ if g:typst_conceal_math
     runtime! syntax/typst-symbols.vim
 endif
 
+" Common {{{1
+
+" Common > Comment {{{2
+syntax cluster typstComments
+    \ contains=typstCommentLine,typstCommentBlock,typstShebang
+
+" The patterns for comments must come after typstCodeOperator, since it includes a `/`
+syntax region typstCommentLine
+    \ start="/\*" end="\*/" keepend
+    \ contains=typstCommentTodo,@Spell
+
+syntax region typstCommentBlock
+    \ start="//" end=/$/ keepend
+    \ contains=typstCommentTodo,@Spell
+
+syntax keyword typstCommentTodo
+    \ contained
+    \ TODO FIXME XXX TBD
+
+" Must come after typstHashtagInvalidChar
+syntax region typstShebang
+    \ start=/\%^#!/ end=/$/ keepend
+
+" Common > Escapes {{{2
+
 " Must come absolutely last, so that it takes priority over every other pattern!
 syntax match typstEscaped /\\u{\x*}\|\\[^[:space:]]/
-syntax cluster typstMarkup add=typstEscaped
-syntax cluster typstMath add=typstEscaped
 
-
-" Math > Linked groups {{{2
-highlight default link typstMathIdentifier          Identifier
-highlight default link typstMathFunction            Statement
-highlight default link typstMathNumber              Number
-highlight default link typstMathSymbol              Statement
 
 " Highlighting {{{1
 
@@ -481,6 +511,11 @@ highlight default link typstMathSymbol              Statement
 highlight default link typstCommentBlock            Comment
 highlight default link typstCommentLine             Comment
 highlight default link typstCommentTodo             Todo
+highlight default link typstShebang                 Special
+highlight default link typstEscaped                 Special
+
+highlight default link typstCodeInvalidChar         Error
+highlight default link typstCodeOperator            Operator
 highlight default link typstCodeConditional         Conditional
 highlight default link typstCodeRepeat              Repeat
 highlight default link typstCodeKeyword             Keyword
@@ -505,6 +540,8 @@ highlight default link typstCodeParen               Noise
 highlight default link typstCodeBrace               Noise
 highlight default link typstCodeBracket             Noise
 highlight default link typstCodeDollar              Special
+
+highlight default link typstHashtagInvalidChar      Error
 " highlight default link typstHashtagControlFlowError Error
 highlight default link typstHashtagConditional      Conditional
 highlight default link typstHashtagRepeat           Repeat
@@ -521,6 +558,7 @@ highlight default link typstHashtagParen            Noise
 highlight default link typstHashtagBrace            Noise
 highlight default link typstHashtagBracket          Noise
 highlight default link typstHashtagDollar           Special
+
 highlight default link typstMarkupRawInline         Macro
 highlight default link typstMarkupRawBlock          Macro
 highlight default link typstMarkupLabel             Structure
@@ -538,7 +576,10 @@ highlight default link typstMarkupEllipsis          Structure
 highlight default link typstMarkupTermMarker        Structure
 highlight default link typstMarkupDollar            Special
 
-highlight default link typstEscaped Special
+highlight default link typstMathIdentifier          Identifier
+highlight default link typstMathFunction            Statement
+highlight default link typstMathNumber              Number
+highlight default link typstMathSymbol              Statement
 
 " Highlighting > Custom Styling {{{2
 highlight! Conceal ctermfg=NONE ctermbg=NONE guifg=NONE guibg=NONE
