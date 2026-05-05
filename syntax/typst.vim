@@ -50,8 +50,8 @@ syntax cluster typstCode
 " Code > Identifiers & Functions {{{2
 syntax cluster typstCode add=typstCodeIdentifier,typstCodeFunction
 
-" The `\%(-*\)\@>` construct will consume all dashes in front of an identifier. It
-" is necessary so that, for instance, `--` doesn't get highlighted as a minus
+" The `\%(-*\)\@>` construct will consume all dashes in front of an identifier.
+" It is necessary so that, for instance, `--` doesn't get highlighted as a minus
 " in front of a variable named `-`.
 syntax match typstCodeIdentifier
     \ contained
@@ -118,13 +118,20 @@ syntax match typstCodeShowRocket
 " Code > Constants {{{2
 syntax cluster typstCodeConstants
     \ contains=typstCodeConstant
+            \ ,typstCodeBoolean
             \ ,typstCodeFloat
             \ ,typstCodeInteger
             \ ,typstCodeString
             \ ,typstCodeLabel
+
+" Must come after typstCodeIdentifier
 syntax match typstCodeConstant
     \ contained
-    \ /\v<%(none|auto|true|false)-@!>/
+    \ /\<\%(-*\)\@>\%(none\|auto\)\>/
+
+syntax match typstCodeBoolean
+    \ contained
+    \ /\<\%(-*\)\@>\%(true\|false\)\>/
 
 syntax cluster typstCodeFloatSuffixes
     \ contains=typstCodeFloatRatio
@@ -200,8 +207,13 @@ syntax cluster typstHashtag
 " Hashtag > Constants {{{2
 syntax cluster typstHashtagConstants
     \ contains=typstHashtagConstant
+            \ ,typstHashtagBoolean
+
 syntax match typstHashtagConstant
-    \ /\v#(none|auto|true|false)>/
+    \ /#\%(none\|auto\)\>/
+
+syntax match typstHashtagBoolean
+    \ /#\%(true\|false\)\>/
 
 " Hashtag > Identifiers & Functions {{{2
 syntax cluster typstHashtag add=typstHashtagIdentifier,typstHashtagFunction
@@ -473,6 +485,7 @@ highlight default link typstCodeConditional         Conditional
 highlight default link typstCodeRepeat              Repeat
 highlight default link typstCodeKeyword             Keyword
 highlight default link typstCodeConstant            Constant
+highlight default link typstCodeBoolean             Boolean
 highlight default link typstCodeInteger             Number
 highlight default link typstCodeFloat               Number
 highlight default link typstCodeInvalidNumberSuffix Error
@@ -497,6 +510,7 @@ highlight default link typstHashtagConditional      Conditional
 highlight default link typstHashtagRepeat           Repeat
 highlight default link typstHashtagKeyword          Keyword
 highlight default link typstHashtagConstant         Constant
+highlight default link typstHashtagBoolean          Boolean
 highlight default link typstHashtagStatementWord    Statement
 highlight default link typstHashtagIdentifier       Identifier
 highlight default link typstHashtagFieldAccess      Identifier
