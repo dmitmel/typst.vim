@@ -210,6 +210,7 @@ syntax cluster typstHashtagMemberAccess
     \ contains=typstHashtagFieldAccess
             \ ,typstHashtagMethodCall
             \ ,typstHashtagFunctionArguments
+            \ ,typstHashtagSemicolon
 
 syntax match typstHashtagIdentifier
     \ /#-\@!\K\%(\k\|-\)*\>/
@@ -231,9 +232,12 @@ syntax match typstHashtagMethodCall
     \ /\.-\@!\K\%(\k\|-\)*\>\ze[\(\[]/hs=s+1
     \ nextgroup=typstHashtagFunctionArguments
 
+syntax match typstHashtagSemicolon contained /;/
+
 syntax region typstHashtagFunctionArguments
     \ contained transparent
     \ matchgroup=typstCodeParen start=/(/ end=/)/
+    \ matchgroup=typstHashtagSemicolon end=/;/
     \ contains=@typstCode
     \ nextgroup=@typstHashtagMemberAccess
 
@@ -497,6 +501,7 @@ highlight default link typstHashtagStatementWord    Statement
 highlight default link typstHashtagIdentifier       Identifier
 highlight default link typstHashtagFieldAccess      Identifier
 highlight default link typstHashtagMethodCall       Function
+highlight default link typstHashtagSemicolon        Noise
 highlight default link typstHashtagFunction         Function
 highlight default link typstHashtagParen            Noise
 highlight default link typstHashtagBrace            Noise
