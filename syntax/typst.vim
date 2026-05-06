@@ -177,8 +177,7 @@ syntax cluster typstCodeParens
             \ ,typstCodeBraceRegion
             \ ,typstCodeBracketRegion
             \ ,typstCodeDollarRegion
-            \ ,typstMarkupRawInline
-            \ ,typstMarkupRawBlock
+            \ ,@typstMarkupRawRegions
 
 syntax region typstCodeParenRegion
     \ contained transparent
@@ -382,8 +381,7 @@ syntax cluster typstMarkup
 
 " Markup > Text {{{2
 syntax cluster typstMarkupText
-    \ contains=typstMarkupRawInline
-            \ ,typstMarkupRawBlock
+    \ contains=@typstMarkupRawRegions
             \ ,typstMarkupLabel
             \ ,typstMarkupRefMarker
             \ ,typstMarkupUrl
@@ -401,14 +399,17 @@ syntax cluster typstMarkupText
             \ ,typstMarkupDollarRegion
 
 " Raw Text
-syntax match typstMarkupRawInline
-    \ /`.\{-}`/
+syntax cluster typstMarkupRawRegions contains=
+    \ typstMarkupRawInline,
+    \ typstMarkupRawBlock,
+    \ typstMarkupCodeBlockTypst,
+syntax region typstMarkupRawInline
+    \ start=/`/ end=/`/ keepend
 syntax region typstMarkupRawBlock
-    \ matchgroup=Macro start=/```\w*/
-    \ matchgroup=Macro end=/```/ keepend
+    \ matchgroup=Macro start=/\z(```\+\)\w*/ end=/\z1/ keepend
 TypstConcealends syntax region typstMarkupCodeBlockTypst
-    \ matchgroup=Macro start=/```typst/
-    \ matchgroup=Macro end=/```/ contains=@typstCode keepend
+    \ matchgroup=Macro start=/\z(```\+\)typst/ end=/\z1/ keepend
+    \ contains=@typstMarkup
 runtime! syntax/typst-embedded.vim
 
 " Label & Reference

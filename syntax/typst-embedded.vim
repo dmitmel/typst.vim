@@ -9,10 +9,11 @@ for s:name in g:typst_embedded_languages
     let s:include = ['syntax include'
                 \   ,'@typstEmbedded_'..s:langname
                 \   ,'syntax/'..s:langfile..'.vim']
+    let s:regionname = 'typstMarkupCodeBlock_' . s:langname
     let s:rule = ['syn region'
-                \,s:langname
+                \,s:regionname
                 \,'matchgroup=Macro'
-                \,'start=/```'..s:langname..'\>/ end=/```/'
+                \,'start=/\z(```\+\)'..s:langname..'\>/ end=/\z1/'
                 \,'contains=@typstEmbedded_'..s:langname
                 \,'keepend']
     if g:typst_conceal
@@ -21,6 +22,7 @@ for s:name in g:typst_embedded_languages
     execute 'silent! ' .. join(s:include, ' ')
     unlet! b:current_syntax
     execute join(s:rule, ' ')
+    execute 'syntax cluster typstMarkupRawRegions add=' . s:regionname
 endfor
 
 " vim: sw=4 sts=4 et fdm=marker fdl=0
