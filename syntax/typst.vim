@@ -201,10 +201,7 @@ syntax region typstCodeDollarRegion
 
 
 " Hashtag {{{1
-syntax cluster typstHashtag
-    \ contains=typstHashtagInvalidChar
-            \ ,@typstHashtagKeywords
-            \ ,@typstHashtagParens
+syntax cluster typstHashtag contains=typstHashtagInvalidChar
 
 " Basically all ASCII punctuation characters are invalid immediately following
 " a hashtag, apart from these: _, {, [, (, `, ", $. They will get matched by
@@ -306,11 +303,11 @@ syntax region typstHashtagRawInline
 " TODO: typstHashtagRawBlock
 
 " Hashtag > Parens {{{2
-syntax cluster typstHashtagParens
-    \ contains=typstHashtagParenRegion
-            \ ,typstHashtagBraceRegion
-            \ ,typstHashtagBracketRegion
-            \ ,typstHashtagDollarRegion
+syntax cluster typstHashtag add=
+    \ typstHashtagParenRegion,
+    \ typstHashtagBraceRegion,
+    \ typstHashtagBracketRegion,
+    \ typstHashtagDollarRegion,
 
 syntax region typstHashtagParenRegion
     \ transparent
@@ -337,39 +334,89 @@ syntax region typstHashtagDollarRegion
     \ nextgroup=@typstHashtagMemberAccess
 
 " Hashtag > Keywords {{{2
-syntax cluster typstHashtagKeywords
-    \ contains=typstHashtagConditional
-            \ ,typstHashtagRepeat
-            \ ,typstHashtagKeywords
-            \ ,typstHashtagStatement
+syntax cluster typstHashtag add=
+    \ typstHashtagConditional,
+    \ typstHashtagRepeat,
+    \ typstHashtagKeyword,
+    \ typstHashtagStatement,
 
-" syntax match typstHashtagControlFlowError
-"     \ /\v#%(if|while|for)>-@!.{-}$\_.{-}%(\{|\[|\()/
-syntax match typstHashtagControlFlow
-    \ /\v#%(if|while|for)>.{-}\ze%(\{|\[|\()/
-    \ contains=typstHashtagConditional,typstHashtagRepeat
-    \ nextgroup=@typstCode
-syntax region typstHashtagConditional
-    \ contained
-    \ matchgroup=typstHashtagConditional start=/\v#if>/ end=/\v\ze(\{|\[)/
-    \ contains=@typstCode
 syntax region typstHashtagRepeat
     \ contained
     \ matchgroup=typstHashtagRepeat start=/\v#(while|for)>/ end=/\v\ze(\{|\[)/
     \ contains=@typstCode
+
 syntax match typstHashtagKeyword
     \ /#return\>/
     \ skipwhite nextgroup=@typstCode
+
 syntax region typstHashtagStatement
     \ matchgroup=typstHashtagStatementWord start=/\v#(let|set|import|include|context)>/
     \ matchgroup=Noise end=/\v%(;|$)/
     \ contains=@typstCode
+
 syntax region typstHashtagStatement
     \ matchgroup=typstHashtagStatementWord start=/#show\>/
     \ matchgroup=Noise end=/:/
     \ contains=@typstCode
     \ skipwhite nextgroup=@typstCode,typstCodeShowRocket
 
+" This rule exists solely to catch the start of an `#if` statement in markup and
+" redirect to a rule that matches `if` without the hashtag. This is done so that
+" we can reuse the same rule for both the start of an `#if` statement and for
+" `else if` clauses. `me=s+1` moves the end of this match to the `#` character,
+" so the group in `nextgroup` will be matched immediately after the `#`.
+syntax match typstHashtagConditional /#if\>/me=s+1 nextgroup=typstHashtagIfStatement
+
+" The purpose of the long regex in the `end=/.../` pattern is to find where the
+" condition of the `#if` stops and the body begins. This is made complicated by
+" the fact that in Typst, unlike in C-like languages, the condition of the `if`
+" statement is not surrounded with parentheses. Instead, Typst will try to parse
+" a complete valid expression, and then expect a `[ ... ]` or `{ ... }` block of
+" the body to follow immediately afterwards. However, a bracketed/braced block
+" is also a valid expression and can just as well be part of the condition, e.g.
+" `#if check[markup].something != 0 or { (long + complicated).expression() } {`,
+" so how do we tell where the body actually begins? I employ a simple heuristic
+" to avoid terminating the condition region prematurely: when an opening brace
+" or bracket is found, I use a negative look-behind to check if the preceding
+" token looks like it extends the expression or doesn't. For example, binary and
+" unary operators require an operand on the right-hand side, so a bracket after
+" an operator is parsed as its operand and thus it becomes a part of the overall
+" condition. If a bracket comes immediately after a non-whitespace character -
+" it is most likely an argument to a function. Lastly, if it comes right after
+" the keyword `if`, then it is definitely parsed as the start of an expression.
+syntax region typstHashtagIfStatement
+    \ contained transparent
+    \ matchgroup=typstHashtagIf start=/\<if\>/
+    \ matchgroup=NONE end=/$\|\ze;\|\%([-+*/<>!=]=\s*\|[-+*/<>=]\s*\|\<\%(and\|or\|not\|in\|if\)\>\s*\|\S\)\@<!\ze[\[\{]/
+    \ contains=@typstCode
+    \ nextgroup=typstHashtagIfClause,typstHashtagSemicolon
+
+syntax region typstHashtagIfClause
+    \ contained transparent
+    \ matchgroup=typstCodeBracket start=/\[/ end=/\]/
+    \ contains=@typstMarkup
+    \ skipwhite nextgroup=typstHashtagElse,typstHashtagSemicolon
+
+syntax region typstHashtagIfClause
+    \ contained transparent
+    \ matchgroup=typstCodeBrace start=/{/ end=/}/
+    \ contains=@typstCode
+    \ skipwhite nextgroup=typstHashtagElse,typstHashtagSemicolon
+
+syntax match typstHashtagElse
+    \ contained
+    \ /\<else\>/
+    \ skipwhite nextgroup=typstHashtagElseClause,typstHashtagIfStatement,typstHashtagSemicolon
+
+syntax region typstHashtagElseClause
+    \ contained transparent
+    \ matchgroup=typstCodeBracket start=/\[/ end=/\]/
+    \ contains=@typstMarkup
+
+syntax region typstHashtagElseClause
+    \ contained transparent
+    \ matchgroup=typstCodeBrace start=/{/ end=/}/
+    \ contains=@typstCode
 
 " Markup {{{1
 syntax cluster typstMarkup
@@ -577,6 +624,7 @@ highlight default link typstCodeDollar              Special
 highlight default link typstHashtagInvalidChar      Error
 " highlight default link typstHashtagControlFlowError Error
 highlight default link typstHashtagConditional      Conditional
+highlight default link typstHashtagElse             typstHashtagConditional
 highlight default link typstHashtagRepeat           Repeat
 highlight default link typstHashtagKeyword          Keyword
 highlight default link typstHashtagConstant         Constant
