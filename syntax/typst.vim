@@ -104,7 +104,7 @@ syntax keyword typstCodeKeyword
 syntax region typstCodeStatement
     \ contained
     \ matchgroup=typstCodeStatementWord start=/\v(let|set|import|include|context)>/
-    \ matchgroup=Noise end=/\v%(;|$)/
+    \ matchgroup=NONE end=/$\|\ze;/
     \ contains=@typstCode
 syntax region typstCodeStatement
     \ contained
@@ -243,7 +243,7 @@ syntax match typstHashtagSemicolon contained /;/
 syntax region typstHashtagFunctionArguments
     \ contained transparent
     \ matchgroup=typstCodeParen start=/(/ end=/)/
-    \ matchgroup=typstHashtagSemicolon end=/;/
+    \ matchgroup=NONE end=/\ze;/
     \ contains=@typstCode
     \ nextgroup=@typstHashtagMemberAccess
 
@@ -312,6 +312,7 @@ syntax cluster typstHashtag add=
 syntax region typstHashtagParenRegion
     \ transparent
     \ matchgroup=typstHashtagParen start=/#(/ end=/)/
+    \ matchgroup=NONE end=/$\|\ze;/
     \ contains=@typstCode
     \ nextgroup=@typstHashtagMemberAccess
 
@@ -334,16 +335,7 @@ syntax region typstHashtagDollarRegion
     \ nextgroup=@typstHashtagMemberAccess
 
 " Hashtag > Keywords {{{2
-syntax cluster typstHashtag add=
-    \ typstHashtagConditional,
-    \ typstHashtagRepeat,
-    \ typstHashtagKeyword,
-    \ typstHashtagStatement,
-
-syntax region typstHashtagRepeat
-    \ contained
-    \ matchgroup=typstHashtagRepeat start=/\v#(while|for)>/ end=/\v\ze(\{|\[)/
-    \ contains=@typstCode
+syntax cluster typstHashtag add=typstHashtagKeyword,typstHashtagStatement
 
 syntax match typstHashtagKeyword
     \ /#return\>/
@@ -351,21 +343,29 @@ syntax match typstHashtagKeyword
 
 syntax region typstHashtagStatement
     \ matchgroup=typstHashtagStatementWord start=/\v#(let|set|import|include|context)>/
-    \ matchgroup=Noise end=/\v%(;|$)/
+    \ matchgroup=Noise end=/;\|$/
     \ contains=@typstCode
 
 syntax region typstHashtagStatement
     \ matchgroup=typstHashtagStatementWord start=/#show\>/
-    \ matchgroup=Noise end=/:/
+    \ matchgroup=Noise end=/:\|$/
     \ contains=@typstCode
     \ skipwhite nextgroup=@typstCode,typstCodeShowRocket
+
+syntax cluster typstHashtag add=typstHashtagIf,typstHashtagElse,typstHashtagWhile,typstHashtagFor
 
 " This rule exists solely to catch the start of an `#if` statement in markup and
 " redirect to a rule that matches `if` without the hashtag. This is done so that
 " we can reuse the same rule for both the start of an `#if` statement and for
 " `else if` clauses. `me=s+1` moves the end of this match to the `#` character,
 " so the group in `nextgroup` will be matched immediately after the `#`.
-syntax match typstHashtagConditional /#if\>/me=s+1 nextgroup=typstHashtagIfStatement
+syntax match typstHashtagIf /#if\>/me=s+1 nextgroup=typstHashtagIfStatement
+syntax match typstHashtagFor /#for\>/me=s+1 nextgroup=typstHashtagForStatement
+syntax match typstHashtagWhile /#while\>/me=s+1 nextgroup=typstHashtagWhileStatement
+" Technically this is not valid syntax, but a match for a lone `#else` is
+" included for the sake of completeness (and also because Typst parses it as a
+" keyword in this position, not as an identifier or something else).
+syntax match typstHashtagElse /#else\>/
 
 " The purpose of the long regex in the `end=/.../` pattern is to find where the
 " condition of the `#if` stops and the body begins. This is made complicated by
@@ -387,9 +387,23 @@ syntax match typstHashtagConditional /#if\>/me=s+1 nextgroup=typstHashtagIfState
 syntax region typstHashtagIfStatement
     \ contained transparent
     \ matchgroup=typstHashtagIf start=/\<if\>/
-    \ matchgroup=NONE end=/$\|\ze;\|\%([-+*/<>!=]=\s*\|[-+*/<>=]\s*\|\<\%(and\|or\|not\|in\|if\)\>\s*\|\S\)\@<!\ze[\[\{]/
+    \ matchgroup=NONE end=/$\|\ze;\|\%([-+*/<>!=]=\s*\|[-+*/<>=]\s*\|\<\%(and\|or\|not\|in\|if\|while\)\>\s*\|\S\)\@<!\ze[\[\{]/
     \ contains=@typstCode
     \ nextgroup=typstHashtagIfClause,typstHashtagSemicolon
+
+syntax region typstHashtagWhileStatement
+    \ contained transparent
+    \ matchgroup=typstHashtagWhile start=/\<while\>/
+    \ matchgroup=NONE end=/$\|\ze;\|\%([-+*/<>!=]=\s*\|[-+*/<>=]\s*\|\<\%(and\|or\|not\|in\|if\|while\)\>\s*\|\S\)\@<!\ze[\[\{]/
+    \ contains=@typstCode
+    \ nextgroup=typstHashtagLoopBody,typstHashtagSemicolon
+
+syntax region typstHashtagForStatement
+    \ contained transparent
+    \ matchgroup=typstHashtagFor start=/\<for\>/
+    \ matchgroup=NONE end=/$\|\ze;\|\%([-+*/<>!=]=\s*\|[-+*/<>=]\s*\|\<\%(and\|or\|not\|in\)\>\s*\|\S\)\@<!\ze[\[\{]/
+    \ contains=@typstCode
+    \ nextgroup=typstHashtagLoopBody,typstHashtagSemicolon
 
 syntax region typstHashtagIfClause
     \ contained transparent
@@ -417,6 +431,17 @@ syntax region typstHashtagElseClause
     \ contained transparent
     \ matchgroup=typstCodeBrace start=/{/ end=/}/
     \ contains=@typstCode
+
+syntax region typstHashtagLoopBody
+    \ contained transparent
+    \ matchgroup=typstCodeBracket start=/\[/ end=/\]/
+    \ contains=@typstMarkup
+
+syntax region typstHashtagLoopBody
+    \ contained transparent
+    \ matchgroup=typstCodeBrace start=/{/ end=/}/
+    \ contains=@typstCode
+
 
 " Markup {{{1
 syntax cluster typstMarkup
@@ -624,8 +649,11 @@ highlight default link typstCodeDollar              Special
 highlight default link typstHashtagInvalidChar      Error
 " highlight default link typstHashtagControlFlowError Error
 highlight default link typstHashtagConditional      Conditional
+highlight default link typstHashtagIf               typstHashtagConditional
 highlight default link typstHashtagElse             typstHashtagConditional
 highlight default link typstHashtagRepeat           Repeat
+highlight default link typstHashtagWhile            typstHashtagRepeat
+highlight default link typstHashtagFor              typstHashtagRepeat
 highlight default link typstHashtagKeyword          Keyword
 highlight default link typstHashtagConstant         Constant
 highlight default link typstHashtagBoolean          Boolean
