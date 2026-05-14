@@ -167,9 +167,10 @@ syntax region typstCodeString
     \ contained
     \ start=/"/ skip=/\\\\\|\\"/ end=/"/
     \ contains=typstEscaped,@Spell
+" See typstMarkupLabel for info on the pattern.
 syntax match typstCodeLabel
     \ contained
-    \ /\v\<%(\k|:|\.|-)*\>/
+    \ /\v\<%(\k|-)%(\k|:|\.|-)*\>?/
 
 " Code > Parens {{{2
 syntax cluster typstCodeParens
@@ -292,6 +293,7 @@ syntax match typstHashtagInteger
     \ contains=typstCodeInteger
     \ nextgroup=@typstHashtagMemberAccess
 
+" See typstMarkupLabel for info on the pattern.
 syntax match typstHashtagLabel
     \ /\v#\<%(\k|-)%(\k|:|\.|-)*\>/
     \ nextgroup=@typstHashtagMemberAccess
@@ -484,12 +486,31 @@ TypstConcealends syntax region typstMarkupCodeBlockTypst
     \ contains=@typstMarkup
 runtime! syntax/typst-embedded.vim
 
-" Label & Reference
-syntax match typstMarkupLabel
-    \ /\v\<%(\k|:|\.|-)*\>/
-" Ref markers can't end in ':' or '.', but labels can
-syntax match typstMarkupRefMarker
-    \ /\v\@%(\k|:|\.|-)*%(\k|-)/
+" A label's name must begin with a keyword character following the `<` (notably,
+" a dash is also allowed as the first character here), otherwise it does not get
+" parsed as a label (a lone `<` or something invalid like `<>` is treated simply
+" as literal text). After the initial character dots and colons are also allowed
+" in the label's name. The closing `>` is made optional, so that the label is
+" highlighted as a label while you are typing it.
+syntax match typstMarkupLabel /\v\<%(\k|-)%(\k|:|\.|-)*\>?/
+" Like labels, references must begin with a keyword character or a dash and can
+" contain any number of `:` and `.` afterwards, but unlike labels, they cannot
+" end with a colon or a dot. So, for instance, the text `@ref.` at the end of a
+" sentence gets parsed as a reference `@ref` and a literal dot following it. A
+" lone `@` also does not result in a syntax error and is treated as plain text.
+" As for the regex below, the constraints that the reference contains at least
+" one character and ends with a keyword character and not `:` or `.` is ensured
+" by the last group which is non-optional, but the first character is checked
+" with a zero-width group because otherwise a single-letter reference name like
+" `@a` would not get accepted by this regex.
+syntax match typstMarkupRefMarker /\v\@%(\k|-)@=%(\k|:|\.|-)*%(\k|-)/
+    \ nextgroup=typstMarkupRefSupplement
+" An optional supplement can be added after the reference in square brackets:
+" `@intro[Chapter]`.
+syntax region typstMarkupRefSupplement
+    \ contained
+    \ matchgroup=typstMarkupRefBracket start=/\[/ end=/\]/
+    \ contains=@typstMarkup
 
 " URL
 syntax match typstMarkupUrl
@@ -677,6 +698,7 @@ highlight default link typstMarkupRawInline         Macro
 highlight default link typstMarkupRawBlock          Macro
 highlight default link typstMarkupLabel             Structure
 highlight default link typstMarkupRefMarker         Structure
+highlight default link typstMarkupRefBracket        Noise
 highlight default link typstMarkupBulletList        Structure
 highlight default link typstMarkupHeading           Title
 " highlight default link typstMarkupItalicError       Error
