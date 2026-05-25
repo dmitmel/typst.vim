@@ -4,7 +4,7 @@
 if exists("current_compiler")
     finish
 endif
-let current_compiler = g:typst_cmd
+let current_compiler = 'typst'
 
 let s:save_cpo = &cpo
 set cpo&vim
@@ -14,7 +14,7 @@ if exists(":CompilerSet") != 2
 endif
 
 " With `--diagnostic-format` we can use the default errorformat
-let s:makeprg = [current_compiler, 'compile',
+let s:makeprg = [get(g:, 'typst_cmd', 'typst'), 'compile',
               \  '--diagnostic-format', 'short']
 
 if has('patch-7.4.191')

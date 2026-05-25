@@ -7,12 +7,11 @@ if exists("b:current_syntax")
     finish
 endif
 
-call typst#options#init()
-if !g:typst_syntax_highlight
+if !get(g:, 'typst_syntax_highlight', 1)
     finish
 endif
 
-if g:typst_conceal
+if get(g:, 'typst_conceal', 0)
     command! -nargs=* TypstConcealends <args> concealends
 else
     command! -nargs=* TypstConcealends <args>
@@ -255,7 +254,7 @@ syntax region typstHashtagFunctionArguments
     \ nextgroup=@typstHashtagMemberAccess
 
 
-if g:typst_conceal_emoji
+if get(g:, 'typst_conceal_emoji', get(g:, 'typst_conceal', 0))
     runtime! syntax/typst-emoji.vim
 endif
 
@@ -598,7 +597,7 @@ syntax region typstMathQuote
     \ matchgroup=String start=/"/ skip=/\\\\\|\\"/ end=/"/
     \ contained
 
-if g:typst_conceal_math
+if get(g:, 'typst_conceal_math', get(g:, 'typst_conceal', 0))
     runtime! syntax/typst-symbols.vim
 endif
 

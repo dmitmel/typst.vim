@@ -3,14 +3,14 @@ function! typst#TypstWatch(...)
     " NOTE: added arguments #23 but they will always be like
     " `typst <args> watch <file> --open` so in the future this might be
     " sensitive to in which order typst options should come.
-    let l:cmd = g:typst_cmd
+    let l:cmd = get(g:, 'typst_cmd', 'typst')
         \ . ' watch'
         \ . ' ' . join(a:000)
         \ . ' --diagnostic-format short'
         \ . " '" . expand('%') . "'"
 
     " Add custom output directory if enabled
-    if g:typst_output_to_tmp
+    if get(g:, 'typst_output_to_tmp', 0)
         let l:file_path = expand('%:p')
         let l:home_dir = expand('$HOME')
         " Remove HOME directory prefix if present
@@ -28,7 +28,7 @@ function! typst#TypstWatch(...)
         let l:cmd = l:cmd . ' "' . l:output_path . '"'
     endif
 
-    if !empty(g:typst_pdf_viewer)
+    if !empty(get(g:, 'typst_pdf_viewer', ''))
         let l:cmd = l:cmd . ' --open ' . g:typst_pdf_viewer
     else
         let l:cmd = l:cmd . ' --open'
@@ -81,7 +81,7 @@ function! typst#TypstWatcherCb(channel, content, ...)
         endif
     endfor
     call setqflist(l:errors)
-    if g:typst_auto_open_quickfix
+    if get(g:, 'typst_auto_open_quickfix', 1)
         execute empty(l:errors) ? 'cclose' : 'copen | wincmd p'
     endif
 endfunction
@@ -249,7 +249,7 @@ function! s:JumpToHeader()
     let l:orig_winid = b:orig_winid
     call win_execute(l:orig_winid, 'buffer ' . l:header_info.bufnr)
     call win_execute(l:orig_winid, 'normal! ' . l:header_info.lnum . 'G')
-    if g:typst_auto_close_toc
+    if get(g:, 'typst_auto_close_toc', 0)
         bwipeout!
     endif
     call win_gotoid(l:orig_winid)
@@ -314,7 +314,7 @@ function! typst#foldexpr()
     let line = getline(v:lnum)
 
     " Whenever the user wants to fold nested headers under the parent
-    let nested = g:typst_folding
+    let nested = get(g:, 'typst_foldnested', 1)
 
     " Regular headers
     let depth = match(line, '\(^=\+\)\@<=\( .*$\)\@=')

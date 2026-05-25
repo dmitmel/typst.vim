@@ -3,7 +3,7 @@
 " Maintainer: Kaj Munhoz Arfvidsson
 " Upstream: https://github.com/kaarmu/typst.vim
 
-for s:name in g:typst_embedded_languages
+for s:name in get(g:, 'typst_embedded_languages', [])
     let s:langname = substitute(s:name, '  *-> .*$', '', '')
     let s:langfile = substitute(s:name, '^.* ->  *', '', '')
     let s:include = ['syntax include'
@@ -16,7 +16,7 @@ for s:name in g:typst_embedded_languages
                 \,'start=/\z(```\+\)'..s:langname..'\>/ end=/\z1/'
                 \,'contains=@typstEmbedded_'..s:langname
                 \,'keepend']
-    if g:typst_conceal
+    if get(g:, 'typst_conceal', 0)
         let s:rule += ['concealends']
     endif
     execute 'silent! ' .. join(s:include, ' ')
