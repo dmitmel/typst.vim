@@ -3,11 +3,16 @@
 " Maintainer: Kaj Munhoz Arfvidsson
 " Upstream: https://github.com/kaarmu/typst.vim
 
-if exists("b:current_syntax")
+if !get(g:, 'typst_syntax_highlight', 1)
     finish
 endif
 
-if !get(g:, 'typst_syntax_highlight', 1)
+if !exists('main_syntax')
+    if exists('b:current_syntax')
+        finish
+    endif
+    let main_syntax = 'typst'
+elseif exists('b:current_syntax') && b:current_syntax ==# 'typst'
     finish
 endif
 
@@ -729,7 +734,12 @@ highlight default typstMarkupBoldItalic                 term=bold,italic        
 
 " }}}1
 
-let b:current_syntax = "typst"
+
+let b:current_syntax = 'typst'
+
+if main_syntax ==# 'typst'
+  unlet main_syntax
+endif
 
 delcommand TypstConcealends
 
