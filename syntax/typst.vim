@@ -71,7 +71,7 @@ syntax match typstCodeIdentifier
 " Must come after typstCodeIdentifier
 syntax match typstCodeFunction
     \ contained
-    \ /\<\%(-*\)\@>\zs\K\%(\k\|-\)*\>\ze[\(\[]/
+    \ /\<\%(-*\)\@>\zs\K\%(\k\|-\)*\>\ze[([]/
     \ skipwhite skipempty nextgroup=typstCodeFunctionArguments
 
 syntax match typstCodeIdentifierDot
@@ -232,7 +232,7 @@ syntax match typstHashtagIdentifier
 
 " Must come after typstHashtagIdentifier
 syntax match typstHashtagFunction
-    \ /#-\@!\K\%(\k\|-\)*\>\ze[\(\[]/
+    \ /#-\@!\K\%(\k\|-\)*\>\ze[([]/
     \ nextgroup=typstHashtagFunctionArguments
 
 syntax match typstHashtagFieldAccess
@@ -243,7 +243,7 @@ syntax match typstHashtagFieldAccess
 " Must come after typstHashtagFieldAccess
 syntax match typstHashtagMethodCall
     \ contained
-    \ /\.-\@!\K\%(\k\|-\)*\>\ze[\(\[]/hs=s+1
+    \ /\.-\@!\K\%(\k\|-\)*\>\ze[([]/hs=s+1
     \ nextgroup=typstHashtagFunctionArguments
 
 syntax match typstHashtagSemicolon contained /;/
