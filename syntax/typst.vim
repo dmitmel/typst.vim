@@ -58,38 +58,40 @@ syntax match typstCodeInvalidChar contained /[#%&'?@\\^|~]/
 syntax match typstCodeOperator contained /[-+/*<=>!]=\|[-+/*<=>]\|\.\./
 
 " Code > Identifiers & Functions {{{2
-syntax cluster typstCode add=typstCodeIdentifier,typstCodeFunction
+syntax cluster typstCode add=
+    \ typstCodeIdentifier,
+    \ typstCodeFunction,
+    \ typstCodeFieldAccess,
+    \ typstCodeMethodCall
 
 " The `\%(-*\)\@>` construct will consume all dashes in front of an identifier.
 " It is necessary so that, for instance, `--` doesn't get highlighted as a minus
 " in front of a variable named `-`.
-syntax match typstCodeIdentifier
-    \ contained
-    \ /\<\%(-*\)\@>\zs\K\%(\k\|-\)*\>/
-    \ skipwhite skipempty nextgroup=typstCodeIdentifierDot
+syntax match typstCodeIdentifier contained /\<\%(-*\)\@>\zs\K\%(\k\|-\)*\>/
+" Must come after typstCodeIdentifier. Also, the bracket or paren MUST come
+" right after the name of the function, with no whitespace in between, otherwise
+" it does not get parsed as a function call, but instead as an identifier and an
+" expression in parens/brackets.
+syntax match typstCodeFunction contained /\<\%(-*\)\@>\zs\K\%(\k\|-\)*\>\ze[([]/
+    \ nextgroup=typstCodeFunctionArguments
 
 " Must come after typstCodeIdentifier
-syntax match typstCodeFunction
-    \ contained
-    \ /\<\%(-*\)\@>\zs\K\%(\k\|-\)*\>\ze[([]/
-    \ skipwhite skipempty nextgroup=typstCodeFunctionArguments
-
-syntax match typstCodeIdentifierDot
-    \ contained
-    \ /\./
-    \ skipwhite skipempty nextgroup=typstCodeIdentifier,typstCodeFunction
+syntax match typstCodeFieldAccess contained /\.\_s*-\@!\K\%(\k\|-\)*\>/hs=s+1
+" Must come after typstHashtagFieldAccess and typstCodeFunction
+syntax match typstCodeMethodCall contained /\.\_s*-\@!\K\%(\k\|-\)*\>\ze[([]/hs=s+1
+    \ nextgroup=typstCodeFunctionArguments
 
 syntax region typstCodeFunctionArguments
     \ contained transparent
     \ matchgroup=typstCodeParen start=/(/ end=/)/
     \ contains=@typstCode
-    \ skipwhite skipempty nextgroup=typstCodeIdentifierDot
+    \ nextgroup=typstCodeFunctionArguments
 
 syntax region typstCodeFunctionArguments
     \ contained transparent
     \ matchgroup=typstCodeBracket start=/\[/ end=/\]/
     \ contains=@typstMarkup
-    \ skipwhite skipempty nextgroup=typstCodeIdentifierDot
+    \ nextgroup=typstCodeFunctionArguments
 
 
 " Code > Keywords {{{2
@@ -665,10 +667,9 @@ highlight default link typstCodeString              String
 highlight default link typstCodeLabel               Structure
 highlight default link typstCodeStatementWord       Statement
 highlight default link typstCodeIdentifier          Identifier
-highlight default link typstCodeFieldAccess         Identifier
-highlight default link typstCodeMethodCall          Function
-highlight default link typstCodeIdentifierDot       Noise
 highlight default link typstCodeFunction            Function
+highlight default link typstCodeFieldAccess         typstCodeIdentifier
+highlight default link typstCodeMethodCall          typstCodeFunction
 highlight default link typstCodeParen               Noise
 highlight default link typstCodeBrace               Noise
 highlight default link typstCodeBracket             Noise
