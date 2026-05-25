@@ -6,8 +6,8 @@ if exists("current_compiler")
 endif
 let current_compiler = 'typst'
 
-let s:save_cpo = &cpo
-set cpo&vim
+let s:save_cpo = &cpoptions
+set cpoptions&vim
 
 if exists(":CompilerSet") != 2
     command -nargs=* CompilerSet setlocal <args>
@@ -29,6 +29,6 @@ endif
 " makeprg=s:makeprg`.
 execute 'CompilerSet makeprg=' . join(s:makeprg, '\ ')
 
-let &cpo = s:save_cpo
+let &cpoptions = s:save_cpo
 unlet s:save_cpo
 " vim: tabstop=8 shiftwidth=4 softtabstop=4 expandtab

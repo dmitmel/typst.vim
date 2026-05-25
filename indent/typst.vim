@@ -1,7 +1,6 @@
 if exists('b:did_indent')
   finish
 endif
-
 let b:did_indent = 1
 
 let s:cpo_save = &cpoptions
@@ -69,5 +68,4 @@ endfunction
 
 let &cpoptions = s:cpo_save
 unlet s:cpo_save
-
 " vim: et sts=2 sw=2 ft=vim

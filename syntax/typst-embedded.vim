@@ -3,6 +3,9 @@
 " Maintainer: Kaj Munhoz Arfvidsson
 " Upstream: https://github.com/kaarmu/typst.vim
 
+let s:cpo_save = &cpoptions
+set cpoptions&vim
+
 for s:name in get(g:, 'typst_embedded_languages', [])
     let s:langname = substitute(s:name, '  *-> .*$', '', '')
     let s:langfile = substitute(s:name, '^.* ->  *', '', '')
@@ -25,4 +28,6 @@ for s:name in get(g:, 'typst_embedded_languages', [])
     execute 'syntax cluster typstMarkupRawRegions add=' . s:regionname
 endfor
 
+let &cpoptions = s:cpo_save
+unlet s:cpo_save
 " vim: sw=4 sts=4 et fdm=marker fdl=0

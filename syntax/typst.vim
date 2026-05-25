@@ -11,6 +11,9 @@ if !get(g:, 'typst_syntax_highlight', 1)
     finish
 endif
 
+let s:save_cpo = &cpoptions
+set cpoptions&vim
+
 if get(g:, 'typst_conceal', 0)
     command! -nargs=* TypstConcealends <args> concealends
 else
@@ -730,4 +733,6 @@ let b:current_syntax = "typst"
 
 delcommand TypstConcealends
 
+let &cpoptions = s:save_cpo
+unlet s:save_cpo
 " vim: sw=4 sts=4 et fdm=marker fdl=0

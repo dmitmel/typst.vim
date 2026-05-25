@@ -1,3 +1,6 @@
+let s:save_cpo = &cpoptions
+set cpoptions&vim
+
 function! typst#TypstWatch(...)
     " Prepare command
     " NOTE: added arguments #23 but they will always be like
@@ -334,3 +337,6 @@ function! typst#foldexpr()
 
     return "="
 endfunction
+
+let &cpoptions = s:save_cpo
+unlet s:save_cpo

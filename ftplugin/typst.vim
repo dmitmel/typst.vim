@@ -1,9 +1,11 @@
 " Only do this when not done yet for this buffer
-if exists("b:did_ftplugin") | finish | endif
+if exists("b:did_ftplugin")
+    finish
+endif
 let b:did_ftplugin = 1
 
-let s:cpo_orig = &cpo
-set cpo&vim
+let s:save_cpo = &cpoptions
+set cpoptions&vim
 
 compiler typst
 
@@ -52,7 +54,6 @@ command! -buffer Toch call typst#Toc('horizontal')
 command! -buffer Tocv call typst#Toc('vertical')
 command! -buffer Toct call typst#Toc('tab')
 
-let &cpo = s:cpo_orig
-unlet s:cpo_orig
-
+let &cpoptions = s:save_cpo
+unlet s:save_cpo
 " vim: tabstop=8 shiftwidth=4 softtabstop=4 expandtab
