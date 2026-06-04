@@ -34,12 +34,12 @@ syntax cluster typstCode
     \ contains=@typstComments
             \ ,typstCodeInvalidChar
             \ ,typstCodeOperator
+            \ ,typstSemicolon
             \ ,@typstCodeKeywords
             \ ,@typstCodeConstants
-            \ ,@typstCodeIdentifiers
             \ ,@typstCodeParens
 
-" These characters never appear as part of valid tokens in code mode, with the
+" These characters never appear as part of a valid token in code mode, with the
 " exception of %, which can get matched after a number.
 syntax match typstCodeInvalidChar contained /[#%&'?@\\^|~]/
 
@@ -55,7 +55,9 @@ syntax match typstCodeInvalidChar contained /[#%&'?@\\^|~]/
 
 " The list of all operators in the code mode:
 " <https://github.com/typst/typst/blob/v0.14.2/docs/reference/language/scripting.md#operators>
-syntax match typstCodeOperator contained /[-+/*<=>!]=\|[-+/*<=>]\|\.\./
+syntax match typstCodeOperator contained /[-+/*<=>]=\?\|=>\|!=\|\.\./
+
+syntax match typstSemicolon contained /;/
 
 " Code > Identifiers & Functions {{{2
 syntax cluster typstCode add=
@@ -133,8 +135,8 @@ syntax cluster typstCodeConstants
             \ ,typstCodeBoolean
             \ ,typstCodeFloat
             \ ,typstCodeInteger
-            \ ,typstCodeString
-            \ ,typstCodeLabel
+            \ ,typstString
+            \ ,typstLabel
 
 " Must come after typstCodeIdentifier
 syntax match typstCodeConstant
@@ -164,7 +166,10 @@ syntax match typstCodeInteger
     \ /\v%(0b[01]+|0o\o+|0x\x+)/
     \ nextgroup=typstCodeInvalidNumberSuffix
 
-" Must come *before* patterns for the valid suffixes, so that it gets lower priority when matching.
+" Must come *before* patterns for the valid suffixes, so that it gets lower
+" priority when matching. [:alnum:] is used here instead of just [:alpha:] so
+" that it consumes any invalid digits that were not matched as part of the
+" preceding numeric literal, such as `234` in `0b0101234`.
 syntax match typstCodeInvalidNumberSuffix contained /[[:alnum:]%]\+/
 
 syntax match typstCodeFloatRatio contained /%\%(\k\@!\|-\@=\)/
@@ -172,21 +177,14 @@ syntax match typstCodeFloatLength contained /\%(pt\|mm\|cm\|in\|em\)\%(\>\|\ze-\
 syntax match typstCodeFloatAngle contained /\%(deg\|rad\)\%(\>\|\ze-\)/
 syntax match typstCodeFloatFraction contained /fr\%(\>\|\ze-\)/
 
-syntax region typstCodeString
-    \ contained
-    \ start=/"/ skip=/\\\\\|\\"/ end=/"/
-    \ contains=typstEscaped,@Spell
-" See typstMarkupLabel for info on the pattern.
-syntax match typstCodeLabel
-    \ contained
-    \ /\v\<%(\k|-)%(\k|:|\.|-)*\>?/
+syntax region typstString contained start=/"/ skip=/\\[\\"]/ end=/"/ contains=typstEscaped,@Spell
 
 " Code > Parens {{{2
 syntax cluster typstCodeParens
     \ contains=typstCodeParenRegion
             \ ,typstCodeBraceRegion
             \ ,typstCodeBracketRegion
-            \ ,typstCodeDollarRegion
+            \ ,typstMathRegion
             \ ,@typstMarkupRawRegions
 
 syntax region typstCodeParenRegion
@@ -204,20 +202,15 @@ syntax region typstCodeBracketRegion
     \ matchgroup=typstCodeBracket start=/\[/ end=/\]/
     \ contains=@typstMarkup
 
-syntax region typstCodeDollarRegion
-    \ contained
-    \ matchgroup=typstCodeDollar start=/\$/ end=/\$/
-    \ contains=@typstMath
-
 
 " Hashtag {{{1
 syntax cluster typstHashtag contains=typstHashtagInvalidChar
 
 " Basically all ASCII punctuation characters are invalid immediately following
-" a hashtag, apart from these: _, {, [, (, `, ", $. They will get matched by
+" a hashtag, apart from these: _, <, {, [, (, `, ", $. They will get matched by
 " syntax rules below, which will take priority and override this one. Whitespace
 " immediately after the hashtag is also invalid.
-syntax match typstHashtagInvalidChar /#\_./hs=s+1
+syntax match typstHashtagInvalidChar /#./hs=s+1
 
 " Hashtag > Identifiers & Functions {{{2
 syntax cluster typstHashtag add=typstHashtagIdentifier,typstHashtagFunction
@@ -226,7 +219,7 @@ syntax cluster typstHashtagMemberAccess
     \ contains=typstHashtagFieldAccess
             \ ,typstHashtagMethodCall
             \ ,typstHashtagFunctionArguments
-            \ ,typstHashtagSemicolon
+            \ ,typstSemicolon
 
 syntax match typstHashtagIdentifier
     \ /#-\@!\K\%(\k\|-\)*\>/
@@ -247,8 +240,6 @@ syntax match typstHashtagMethodCall
     \ contained
     \ /\.-\@!\K\%(\k\|-\)*\>\ze[([]/hs=s+1
     \ nextgroup=typstHashtagFunctionArguments
-
-syntax match typstHashtagSemicolon contained /;/
 
 syntax region typstHashtagFunctionArguments
     \ contained transparent
@@ -279,51 +270,42 @@ syntax cluster typstHashtag add=
     \ typstHashtagLabel,
 
 " Must come after typstHashtagIdentifier
-syntax match typstHashtagConstant
-    \ /#\%(none\|auto\)\>/
+syntax match typstHashtagConstant /#\%(none\|auto\)\>/  nextgroup=@typstHashtagMemberAccess
+syntax match typstHashtagBoolean  /#\%(true\|false\)\>/ nextgroup=@typstHashtagMemberAccess
+
+syntax match typstHashtagString /#"/he=s+1 contains=typstString
     \ nextgroup=@typstHashtagMemberAccess
 
-syntax match typstHashtagBoolean
-    \ /#\%(true\|false\)\>/
-    \ nextgroup=@typstHashtagMemberAccess
-
-syntax region typstHashtagString
-    \ start=/#"/ skip=/\\\\\|\\"/ end=/"/
-    \ contains=typstEscaped,@Spell
-    \ nextgroup=@typstHashtagMemberAccess
-
-syntax match typstHashtagFloat
-    \ /\v#%(\d+\.\d*|\.\d+|\d+)%([eE][+-]?\d+)?[[:alnum:]%]*/he=s+1
+syntax match typstHashtagFloat /\v#%(\d+\.\d*|\.\d+|\d+)%([eE][+-]?\d+)?[[:alnum:]%]*/he=s+1
     \ contains=typstCodeFloat
     \ nextgroup=@typstHashtagMemberAccess
 
-syntax match typstHashtagInteger
-    \ /#\%(0b[01]\+\|0o\o\+\|0x\x\+\)[[:alnum:]%]*/he=s+1
+syntax match typstHashtagInteger /#\%(0b[01]\+\|0o\o\+\|0x\x\+\)[[:alnum:]%]*/he=s+1
     \ contains=typstCodeInteger
     \ nextgroup=@typstHashtagMemberAccess
 
-" See typstMarkupLabel for info on the pattern.
-syntax match typstHashtagLabel
-    \ /\v#\<%(\k|-)%(\k|:|\.|-)*\>/
-    \ nextgroup=@typstHashtagMemberAccess
+syntax match typstHashtagLabel /#<\%(\k\|-\)/he=s+1 contains=typstLabel nextgroup=typstHashtagLabelEnd
+" This group exists to confirm that the label has ended, as its terminating `>`
+" sign is made optional (see why at the definition of `typstLabel`). The `lc=1`
+" directive makes Vim's syntax engine step a single character back before trying
+" to match the pattern, which in this case is used to look back into the text
+" that was already matched and consumed by the `typstLabel` group contained in
+" `typstHashtagLabel`, and check if it has actually ended with a `>` character.
+syntax match typstHashtagLabelEnd />/lc=1 contained transparent nextgroup=@typstHashtagMemberAccess
 
-syntax region typstHashtagRawInline
-    \ start=/#`/ end=/`/ keepend
+syntax match typstHashtagRaw /#`/he=s+1 contains=@typstMarkupRawRegions
     \ nextgroup=@typstHashtagMemberAccess
-
-" TODO: typstHashtagRawBlock
 
 " Hashtag > Parens {{{2
 syntax cluster typstHashtag add=
     \ typstHashtagParenRegion,
     \ typstHashtagBraceRegion,
     \ typstHashtagBracketRegion,
-    \ typstHashtagDollarRegion,
 
 syntax region typstHashtagParenRegion
     \ transparent
     \ matchgroup=typstHashtagParen start=/#(/ end=/)/
-    \ matchgroup=NONE end=/$\|\ze;/
+    \ matchgroup=NONE end=/\ze;/
     \ contains=@typstCode
     \ nextgroup=@typstHashtagMemberAccess
 
@@ -339,10 +321,7 @@ syntax region typstHashtagBracketRegion
     \ contains=@typstMarkup
     \ nextgroup=@typstHashtagMemberAccess
 
-syntax region typstHashtagDollarRegion
-    \ transparent
-    \ matchgroup=typstHashtagDollar start=/#\$/ end=/\$/
-    \ contains=@typstMath
+syntax match typstHashtagMath /#\$/he=s+1 contains=typstMathRegion
     \ nextgroup=@typstHashtagMemberAccess
 
 " Hashtag > Keywords {{{2
@@ -366,13 +345,14 @@ syntax region typstHashtagStatement
 syntax cluster typstHashtag add=typstHashtagIf,typstHashtagElse,typstHashtagWhile,typstHashtagFor
 
 " This rule exists solely to catch the start of an `#if` statement in markup and
-" redirect to a rule that matches `if` without the hashtag. This is done so that
+" redirect to a rule that matches an `if` without the hash. This is done so that
 " we can reuse the same rule for both the start of an `#if` statement and for
 " `else if` clauses. `me=s+1` moves the end of this match to the `#` character,
 " so the group in `nextgroup` will be matched immediately after the `#`.
 syntax match typstHashtagIf /#if\>/me=s+1 nextgroup=typstHashtagIfStatement
-syntax match typstHashtagFor /#for\>/me=s+1 nextgroup=typstHashtagForStatement
-syntax match typstHashtagWhile /#while\>/me=s+1 nextgroup=typstHashtagWhileStatement
+" The same is done for `#for` and `#while`.
+syntax match typstHashtagFor /#for\>/me=s+1 nextgroup=typstHashtagLoopStatement
+syntax match typstHashtagWhile /#while\>/me=s+1 nextgroup=typstHashtagLoopStatement
 " Technically this is not valid syntax, but a match for a lone `#else` is
 " included for the sake of completeness (and also because Typst parses it as a
 " keyword in this position, not as an identifier or something else).
@@ -400,58 +380,32 @@ syntax region typstHashtagIfStatement
     \ matchgroup=typstHashtagIf start=/\<if\>/
     \ matchgroup=NONE end=/$\|\ze;\|\%([-+*/<>!=]=\s*\|[-+*/<>=]\s*\|\<\%(and\|or\|not\|in\|if\|while\)\>\s*\|\S\)\@<!\ze[\[\{]/
     \ contains=@typstCode
-    \ nextgroup=typstHashtagIfClause,typstHashtagSemicolon
+    \ nextgroup=typstHashtagIfClause,typstSemicolon
 
-syntax region typstHashtagWhileStatement
+syntax region typstHashtagLoopStatement
     \ contained transparent
-    \ matchgroup=typstHashtagWhile start=/\<while\>/
+    \ matchgroup=typstHashtagRepeat start=/\<while\>/ start=/\<for\>/
     \ matchgroup=NONE end=/$\|\ze;\|\%([-+*/<>!=]=\s*\|[-+*/<>=]\s*\|\<\%(and\|or\|not\|in\|if\|while\)\>\s*\|\S\)\@<!\ze[\[\{]/
     \ contains=@typstCode
-    \ nextgroup=typstHashtagLoopBody,typstHashtagSemicolon
+    \ nextgroup=typstHashtagLoopBody,typstSemicolon
 
-syntax region typstHashtagForStatement
-    \ contained transparent
-    \ matchgroup=typstHashtagFor start=/\<for\>/
-    \ matchgroup=NONE end=/$\|\ze;\|\%([-+*/<>!=]=\s*\|[-+*/<>=]\s*\|\<\%(and\|or\|not\|in\)\>\s*\|\S\)\@<!\ze[\[\{]/
-    \ contains=@typstCode
-    \ nextgroup=typstHashtagLoopBody,typstHashtagSemicolon
+syntax cluster typstHashtagStatementNext contains=
+    \ typstSemicolon,typstHashtagFieldAccess,typstHashtagMethodCall
 
-syntax region typstHashtagIfClause
-    \ contained transparent
-    \ matchgroup=typstCodeBracket start=/\[/ end=/\]/
-    \ contains=@typstMarkup
-    \ skipwhite nextgroup=typstHashtagElse,typstHashtagSemicolon
+syntax match typstHashtagIfClause contained transparent /[[{]/
+    \ contains=typstCodeBracketRegion,typstCodeBraceRegion
+    \ skipwhite nextgroup=typstHashtagElse,@typstHashtagStatementNext
 
-syntax region typstHashtagIfClause
-    \ contained transparent
-    \ matchgroup=typstCodeBrace start=/{/ end=/}/
-    \ contains=@typstCode
-    \ skipwhite nextgroup=typstHashtagElse,typstHashtagSemicolon
+syntax match typstHashtagElse contained /\<else\>/
+    \ skipwhite nextgroup=typstHashtagElseClause,typstHashtagIfStatement,typstSemicolon
 
-syntax match typstHashtagElse
-    \ contained
-    \ /\<else\>/
-    \ skipwhite nextgroup=typstHashtagElseClause,typstHashtagIfStatement,typstHashtagSemicolon
+syntax match typstHashtagElseClause contained transparent /[[{]/
+    \ contains=typstCodeBracketRegion,typstCodeBraceRegion
+    \ nextgroup=@typstHashtagStatementNext
 
-syntax region typstHashtagElseClause
-    \ contained transparent
-    \ matchgroup=typstCodeBracket start=/\[/ end=/\]/
-    \ contains=@typstMarkup
-
-syntax region typstHashtagElseClause
-    \ contained transparent
-    \ matchgroup=typstCodeBrace start=/{/ end=/}/
-    \ contains=@typstCode
-
-syntax region typstHashtagLoopBody
-    \ contained transparent
-    \ matchgroup=typstCodeBracket start=/\[/ end=/\]/
-    \ contains=@typstMarkup
-
-syntax region typstHashtagLoopBody
-    \ contained transparent
-    \ matchgroup=typstCodeBrace start=/{/ end=/}/
-    \ contains=@typstCode
+syntax match typstHashtagLoopBody contained transparent /[[{]/
+    \ contains=typstCodeBracketRegion,typstCodeBraceRegion
+    \ nextgroup=@typstHashtagStatementNext
 
 
 " Markup {{{1
@@ -465,8 +419,8 @@ syntax cluster typstMarkup
 " Markup > Text {{{2
 syntax cluster typstMarkupText
     \ contains=@typstMarkupRawRegions
-            \ ,typstMarkupLabel
-            \ ,typstMarkupRefMarker
+            \ ,typstLabel
+            \ ,typstReference
             \ ,typstMarkupUrl
             \ ,typstMarkupHeading
             \ ,typstMarkupBulletList
@@ -479,7 +433,7 @@ syntax cluster typstMarkupText
             \ ,typstMarkupSoftHyphen
             \ ,typstMarkupDash
             \ ,typstMarkupEllipsis
-            \ ,typstMarkupDollarRegion
+            \ ,typstMathRegion
 
 " Raw Text
 syntax cluster typstMarkupRawRegions contains=
@@ -501,7 +455,7 @@ runtime! syntax/typst-embedded.vim
 " as literal text). After the initial character dots and colons are also allowed
 " in the label's name. The closing `>` is made optional, so that the label is
 " highlighted as a label while you are typing it.
-syntax match typstMarkupLabel /\v\<%(\k|-)%(\k|:|\.|-)*\>?/
+syntax match typstLabel /\v\<%(\k|-)%(\k|:|\.|-)*\>?/
 " Like labels, references must begin with a keyword character or a dash and can
 " contain any number of `:` and `.` afterwards, but unlike labels, they cannot
 " end with a colon or a dot. So, for instance, the text `@ref.` at the end of a
@@ -512,13 +466,12 @@ syntax match typstMarkupLabel /\v\<%(\k|-)%(\k|:|\.|-)*\>?/
 " by the last group which is non-optional, but the first character is checked
 " with a zero-width group because otherwise a single-letter reference name like
 " `@a` would not get accepted by this regex.
-syntax match typstMarkupRefMarker /\v\@%(\k|-)@=%(\k|:|\.|-)*%(\k|-)/
-    \ nextgroup=typstMarkupRefSupplement
+syntax match typstReference /\v\@%(\k|-)@=%(\k|:|\.|-)*%(\k|-)/ nextgroup=typstReferenceSupplement
 " An optional supplement can be added after the reference in square brackets:
 " `@intro[Chapter]`.
-syntax region typstMarkupRefSupplement
+syntax region typstReferenceSupplement
     \ contained
-    \ matchgroup=typstMarkupRefBracket start=/\[/ end=/\]/
+    \ matchgroup=typstReferenceBracket start=/\[/ end=/\]/
     \ contains=@typstMarkup
 
 " URL
@@ -575,10 +528,6 @@ syntax match typstMarkupDash
 syntax match typstMarkupEllipsis
     \ /\.\.\./
 
-syntax region typstMarkupDollarRegion
-    \ matchgroup=typstMarkupDollar start=/\$/ end=/\$/
-    \ contains=@typstMath
-
 
 " Math {{{1
 syntax cluster typstMath
@@ -591,7 +540,9 @@ syntax cluster typstMath
             \ ,typstMathSymbol
             \ ,typstMathBold
             \ ,typstMathScripts
-            \ ,typstMathQuote
+            \ ,typstString
+
+syntax region typstMathRegion matchgroup=typstMathDelimiter start=/\$/ end=/\$/ contains=@typstMath
 
 " a math identifier should be like \k without '_'
 syntax match typstMathIdentifier
@@ -602,9 +553,6 @@ syntax match typstMathFunction
     \ contained
 syntax match typstMathNumber
     \ /\v<\d+>/
-    \ contained
-syntax region typstMathQuote
-    \ matchgroup=String start=/"/ skip=/\\\\\|\\"/ end=/"/
     \ contained
 
 if get(g:, 'typst_conceal_math', get(g:, 'typst_conceal', 0))
@@ -617,7 +565,8 @@ endif
 syntax cluster typstComments
     \ contains=typstCommentLine,typstCommentBlock,typstShebang
 
-" The patterns for comments must come after typstCodeOperator, since it includes a `/`
+" The patterns for comments must come after typstCodeOperator, since that group
+" also includes the `/` and `*` characters.
 syntax region typstCommentLine
     \ start="/\*" end="\*/" keepend
     \ contains=typstCommentTodo,@Spell
@@ -635,8 +584,8 @@ syntax region typstShebang
     \ start=/\%^#!/ end=/$/ keepend
 
 " Common > Escapes {{{2
-
-" Must come absolutely last, so that it takes priority over every other pattern!
+" Must come absolutely last, so that it takes priority over every other pattern
+" and so that it can prevent any match or region from starting after a backslash!
 syntax match typstEscaped /\\u{\x*}\|\\[^[:space:]]/
 
 
@@ -647,7 +596,16 @@ highlight default link typstCommentBlock            Comment
 highlight default link typstCommentLine             Comment
 highlight default link typstCommentTodo             Todo
 highlight default link typstShebang                 Special
+
 highlight default link typstEscaped                 Special
+highlight default link typstString                  String
+highlight default link typstLabel                   Structure
+highlight default link typstReference               Structure
+highlight default link typstMathDelimiter           Special
+
+highlight default link typstHashtagString           typstString
+highlight default link typstHashtagLabel            typstLabel
+highlight default link typstHashtagMath             typstMathDelimiter
 
 highlight default link typstCodeInvalidChar         Error
 highlight default link typstCodeOperator            Operator
@@ -663,8 +621,6 @@ highlight default link typstCodeFloatLength         Number
 highlight default link typstCodeFloatAngle          Number
 highlight default link typstCodeFloatRatio          Number
 highlight default link typstCodeFloatFraction       Number
-highlight default link typstCodeString              String
-highlight default link typstCodeLabel               Structure
 highlight default link typstCodeStatementWord       Statement
 highlight default link typstCodeIdentifier          Identifier
 highlight default link typstCodeFunction            Function
@@ -673,10 +629,8 @@ highlight default link typstCodeMethodCall          typstCodeFunction
 highlight default link typstCodeParen               Noise
 highlight default link typstCodeBrace               Noise
 highlight default link typstCodeBracket             Noise
-highlight default link typstCodeDollar              Special
 
 highlight default link typstHashtagInvalidChar      Error
-" highlight default link typstHashtagControlFlowError Error
 highlight default link typstHashtagConditional      Conditional
 highlight default link typstHashtagIf               typstHashtagConditional
 highlight default link typstHashtagElse             typstHashtagConditional
@@ -686,27 +640,20 @@ highlight default link typstHashtagFor              typstHashtagRepeat
 highlight default link typstHashtagKeyword          Keyword
 highlight default link typstHashtagConstant         Constant
 highlight default link typstHashtagBoolean          Boolean
-highlight default link typstHashtagString           String
 highlight default link typstHashtagInteger          Number
 highlight default link typstHashtagFloat            Number
-highlight default link typstHashtagLabel            Structure
-highlight default link typstHashtagRawInline        Special
+highlight default link typstHashtagRaw              Special
 highlight default link typstHashtagStatementWord    Statement
 highlight default link typstHashtagIdentifier       Identifier
 highlight default link typstHashtagFieldAccess      Identifier
 highlight default link typstHashtagMethodCall       Function
-highlight default link typstHashtagSemicolon        Noise
 highlight default link typstHashtagFunction         Function
 highlight default link typstHashtagParen            Noise
 highlight default link typstHashtagBrace            Noise
 highlight default link typstHashtagBracket          Noise
-highlight default link typstHashtagDollar           Special
 
 highlight default link typstMarkupRawInline         Macro
 highlight default link typstMarkupRawBlock          Macro
-highlight default link typstMarkupLabel             Structure
-highlight default link typstMarkupRefMarker         Structure
-highlight default link typstMarkupRefBracket        Noise
 highlight default link typstMarkupBulletList        Structure
 highlight default link typstMarkupHeading           Title
 " highlight default link typstMarkupItalicError       Error
@@ -718,7 +665,6 @@ highlight default link typstMarkupSoftHyphen        Structure
 highlight default link typstMarkupDash              Structure
 highlight default link typstMarkupEllipsis          Structure
 highlight default link typstMarkupTermMarker        Structure
-highlight default link typstMarkupDollar            Special
 
 highlight default link typstMathIdentifier          Identifier
 highlight default link typstMathFunction            Statement
