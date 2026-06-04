@@ -562,26 +562,14 @@ endif
 " Common {{{1
 
 " Common > Comment {{{2
-syntax cluster typstComments
-    \ contains=typstCommentLine,typstCommentBlock,typstShebang
-
+syntax cluster typstComments contains=typstCommentLine,typstCommentBlock,typstCommentShebang
 " The patterns for comments must come after typstCodeOperator, since that group
 " also includes the `/` and `*` characters.
-syntax region typstCommentLine
-    \ start="/\*" end="\*/" keepend
-    \ contains=typstCommentTodo,@Spell
-
-syntax region typstCommentBlock
-    \ start="//" end=/$/ keepend
-    \ contains=typstCommentTodo,@Spell
-
-syntax keyword typstCommentTodo
-    \ contained
-    \ TODO FIXME XXX TBD
-
+syntax region typstCommentBlock start="/\*" end="\*/" keepend contains=typstCommentTodo,@Spell
+syntax match typstCommentLine "//.*$" contains=typstCommentTodo,@Spell
+syntax keyword typstCommentTodo contained TODO FIXME XXX TBD NOTE
 " Must come after typstHashtagInvalidChar
-syntax region typstShebang
-    \ start=/\%^#!/ end=/$/ keepend
+syntax match typstCommentShebang /\%^#!.*$/
 
 " Common > Escapes {{{2
 " Must come absolutely last, so that it takes priority over every other pattern
@@ -595,7 +583,7 @@ syntax match typstEscaped /\\u{\x*}\|\\[^[:space:]]/
 highlight default link typstCommentBlock            Comment
 highlight default link typstCommentLine             Comment
 highlight default link typstCommentTodo             Todo
-highlight default link typstShebang                 Special
+highlight default link typstCommentShebang          Special
 
 highlight default link typstEscaped                 Special
 highlight default link typstString                  String
