@@ -260,7 +260,7 @@ endfunction
 
 " Detect context for #51
 " Detects the inner most syntax group under the cursor by default.
-function! typst#synstack(kwargs = {}) abort 
+function! typst#synstack(kwargs = {}) abort
     let l:pos = get(a:kwargs, 'pos', getcurpos()[1:3])
     let l:only_inner = get(a:kwargs, 'only_inner', v:true)
     if mode() ==# 'i'
@@ -272,44 +272,36 @@ function! typst#synstack(kwargs = {}) abort
     return l:only_inner ? l:stack[-1:] : l:stack
 endfunction
 
-function! typst#in_markup(...) abort
-    let l:stack = call('typst#synstack', a:000)
-    let l:ret = empty(l:stack)
-    for l:name in l:stack
-        let l:ret = l:ret 
-            \ || l:name =~? '^typstMarkup'
-            \ || l:name =~? 'Bracket$'
+function! typst#current_syntax_mode(kwargs = {}) abort
+    let l:mode = 'markup'
+    for l:name in typst#synstack(extend({ 'only_inner': v:false }, a:kwargs))
+        if l:name =~? '^typst\%(Markup\|.*BracketRegion$\)'
+            let l:mode = 'markup'
+        elseif l:name =~? '^typst\%(Code\|Hashtag\|.*BraceRegion$\)'
+            let l:mode = 'code'
+        elseif l:name =~? '^typst\%(Math\|.*MathRegion$\)'
+            let l:mode = 'math'
+        elseif l:name =~? '^typstComment'
+            let l:mode = 'comment'
+        endif
     endfor
-    return l:ret
+    return l:mode
+endfunction
+
+function! typst#in_markup(...) abort
+    return call('typst#current_syntax_mode', a:000) ==# 'markup'
 endfunction
 
 function! typst#in_code(...) abort
-    let l:ret = v:false
-    for l:name in call('typst#synstack', a:000)
-        let l:ret = l:ret 
-            \ || l:name =~? '^typstCode'
-            \ || l:name =~? 'Brace$'
-    endfor 
-    return l:ret
+    return call('typst#current_syntax_mode', a:000) ==# 'code'
 endfunction
 
 function! typst#in_math(...) abort
-    let l:ret = v:false
-    for l:name in call('typst#synstack', a:000)
-        let l:ret = l:ret 
-            \ || l:name =~? '^typstMath'
-            \ || l:name =~? 'Dollar$'
-    endfor
-    return l:ret
+    return call('typst#current_syntax_mode', a:000) ==# 'math'
 endfunction
 
 function! typst#in_comment(...) abort
-    let l:ret = v:false
-    for l:name in call('typst#synstack', a:000)
-        let l:ret = l:ret 
-            \ || l:name =~? '^typstComment'
-    endfor
-    return l:ret
+    return call('typst#current_syntax_mode', a:000) ==# 'comment'
 endfunction
 
 
@@ -330,7 +322,7 @@ function! typst#foldexpr()
     if depth > 0
         " check syntax, it should be typstMarkupHeading
         let syncode = synstack(v:lnum, 1)
-        if len(syncode) > 0 && synIDattr(syncode[0], 'name') ==# 'typstMarkupHeading'
+        if len(syncode) > 0 && synIDattr(syncode[0], 'name') ==? 'typstMarkupHeading'
             return ">" . depth
         endif
     endif
